@@ -4,10 +4,20 @@ import {
   RouterProvider,
 } from 'react-router-dom';
 import Home from './pages/Home';
-import Login from './pages/Login';
+import Signin from './pages/Signin';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import AppLayout from './pages/AppLayout';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 0, // time needed to update data in cache
+    },
+  },
+});
 
 const router = createBrowserRouter([
   {
@@ -29,8 +39,8 @@ const router = createBrowserRouter([
     ],
   },
   {
-    path: '/login',
-    element: <Login />,
+    path: '/signin',
+    element: <Signin />,
   },
   {
     path: '/signup',
@@ -39,7 +49,12 @@ const router = createBrowserRouter([
 ]);
 
 const App = () => {
-  return <RouterProvider router={router} />;
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ReactQueryDevtools initialIsOpen={false} />
+      <RouterProvider router={router} />
+    </QueryClientProvider>
+  );
 };
 
 export default App;
