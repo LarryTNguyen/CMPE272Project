@@ -1,12 +1,15 @@
 import supabase from './superbase';
 
-export const signup = async ({ username, email, password }) => {
+export const signup = async ({ username, email, password, fullName }) => {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      username,
-      avatar: '',
+      data: {
+        full_name: fullName,
+        username,
+        avatar: '',
+      },
     },
   });
 
@@ -14,7 +17,7 @@ export const signup = async ({ username, email, password }) => {
   return data;
 };
 
-export const login = async ({ email, password }) => {
+export const signin = async ({ email, password }) => {
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
