@@ -8,6 +8,7 @@ import Signin from './pages/Signin';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import AppLayout from './pages/AppLayout';
+import ProtectedRoute from './pages/ProtectedRoute';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
@@ -22,7 +23,12 @@ const queryClient = new QueryClient({
 const router = createBrowserRouter([
   {
     path: '/',
-    element: <AppLayout />,
+    element: (
+      <ProtectedRoute>
+        <AppLayout />
+      </ProtectedRoute>
+    ),
+
     children: [
       {
         index: true,
