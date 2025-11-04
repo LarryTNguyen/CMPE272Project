@@ -41,7 +41,7 @@ const Navbar = () => {
           </>
         ) : (<div>
           <button className="text-gray-50 transition-all duration-300 hover:text-gray-400">
-            <Link to="/signin">Sign In </Link>
+            <Link to="/signin"> Sign In </Link>
           </button>
           <button className="text-gray-50 transition-all duration-300 hover:text-gray-400">
             <Link to="/signup"> Sign Up</Link>
