@@ -1,8 +1,29 @@
 import { useNavigate } from 'react-router-dom';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import { createClient } from '@supabase/supabase-js'
+import supabase from '../services/superbase';
+
 const InputBid = () => {
+
+
+    const [user, setUser] = useState(null);
+    useEffect(() => {
+        const fetchUser = async () => {
+            const { data: { user }, error } = await supabase.auth.getUser();
+            if (error) {
+                console.error('Error', error);
+            } else if (user) {
+                console.log('logged in : ', user);
+                setUser(user);
+            } else {
+                console.log('No user logged in');
+            }
+        };
+
+        fetchUser();
+    }, []);
 
 
     const navigate = useNavigate();
@@ -14,15 +35,24 @@ const InputBid = () => {
         shares: '',
     })
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        const data = new FormData();
-        data.append("ticker", stock.ticker)
-        data.append("name", stock.name)
-        data.append("shares", stock.shares)
-        data.append("price",stock.price)
-
-        console.log(data)
+        const { data, error } = await supabase
+            .from('user_portfolio')
+            .insert([
+                {
+                    symbol: stock.ticker,
+                    quantity: stock.shares,
+                    purchase_price: stock.price,
+                    user_id: user.id
+                }
+            ]);
+        if (error) {
+            console.error('Error: ', error);
+        } else {
+            console.log('successful', data);
+            navigate('/dashboard')
+        }
 
     }
     const handleTickerChange = (e) => {
@@ -78,7 +108,7 @@ const InputBid = () => {
                             onChange={handleTickerChange}
                             style={{
                                 backgroundColor: 'lightgrey',
-                                borderRadius:'5px'
+                                borderRadius: '5px'
                             }}
                         />
                     </label>
@@ -99,7 +129,7 @@ const InputBid = () => {
                             onChange={handleNameChange}
                             style={{
                                 backgroundColor: 'lightgrey',
-                                borderRadius:'5px'
+                                borderRadius: '5px'
                             }}
 
                         />
@@ -118,9 +148,9 @@ const InputBid = () => {
                         <input
                             value={stock.price}
                             onChange={handlePriceChange}
-                                                        style={{
+                            style={{
                                 backgroundColor: 'lightgrey',
-                                borderRadius:'5px'
+                                borderRadius: '5px'
                             }}
                         />
                     </label>
@@ -138,19 +168,19 @@ const InputBid = () => {
                         <input
                             value={stock.shares}
                             onChange={handleSharesChange}
-                                                        style={{
+                            style={{
                                 backgroundColor: 'lightgrey',
-                                borderRadius:'5px'
+                                borderRadius: '5px'
                             }}
                         />
                     </label>
-                    <button type="submit"                             style={{
-                                backgroundColor: 'lightgrey',
-                                marginTop:'10px',
-                                padding:'3px',
-                                borderRadius:'5px'
-                                
-                            }}>Submit</button>
+                    <button type="submit" style={{
+                        backgroundColor: 'lightgrey',
+                        marginTop: '10px',
+                        padding: '3px',
+                        borderRadius: '5px'
+
+                    }}>Submit</button>
                 </div>
             </form>
         </div>
