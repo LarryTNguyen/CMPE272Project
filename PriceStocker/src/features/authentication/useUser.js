@@ -13,6 +13,6 @@ export const useUser = () => {
   return {
     user,
     isPending,
-    isAuthenicated: user?.role === 'authenticated',
+    isAuthenticated: user?.role === 'authenticated',
   };
 };
