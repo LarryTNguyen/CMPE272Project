@@ -4,22 +4,29 @@ import useSignUp from '../features/authentication/useSignUp';
 
 const Signup = () => {
   const { signup } = useSignUp();
-  const { register, handleSubmit, reset } = useForm({
-    mode: 'onChange',
-  });
+  const { register, handleSubmit, reset } = useForm();
 
-  const onSubmit = ({ username, email, password }) => {
+  const onSubmit = ({ username, email, password, fullName }) => {
     signup(
-      { username, email, password },
+      { username, email, password, fullName },
       {
         onSettled: reset,
       },
     );
   };
+
   return (
     <div className="flex h-screen flex-col items-center justify-center gap-1">
       <h1>Sign Up Page</h1>
       <form onSubmit={handleSubmit(onSubmit)}>
+        <div className="m-2 flex flex-col gap-1">
+          <label>Full Name</label>
+          <input
+            type="text"
+            className="flex flex-col gap-3 rounded-sm border border-black"
+            {...register('fullName', { required: 'This field is required' })}
+          />
+        </div>
         <div className="m-2 flex flex-col gap-1">
           <label>Username</label>
           <input
@@ -44,7 +51,7 @@ const Signup = () => {
             {...register('password', { required: 'This field is required' })}
           />
         </div>
-        <div>
+        <div className="flex justify-center">
           <button
             type="submit"
             className="rounded-lg bg-blue-600 px-5 py-1.5 duration-300 hover:bg-blue-800 hover:text-gray-50"
