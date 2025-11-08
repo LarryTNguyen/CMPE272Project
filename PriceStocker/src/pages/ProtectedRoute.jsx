@@ -9,7 +9,7 @@ const ProtectedRoute = ({ children }) => {
 
   useEffect(() => {
     if (!isPending && !isAuthenticated) {
-      navigate('/signin');
+      navigate('/signin', { replace: true });
     }
   }, [navigate, isPending, isAuthenticated]);
 
