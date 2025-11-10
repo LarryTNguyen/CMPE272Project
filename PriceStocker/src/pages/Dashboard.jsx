@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { TotalProgress } from "../components/Progress";
 import TotalAsset from "../components/TotalAsset";
 import AddNew from "../components/AddNew";
+import AddNewStock from "../components/AddNew";
+
 import AddAssetModal from "../components/AddAssetModal";
 import ActiveTradesCard from "../components/ActiveTradeCard";
 import MockLiveStockCard from "../components/MockLiveStockCard";
@@ -35,6 +37,8 @@ const Dashboard = () => {
       <div className="flex justify-left gap-4">
         <AddNew onClick={() => setOpen(true)} />
       </div>
+
+
         <AddAssetModal
         open={open}
         onClose={() => setOpen(false)}
@@ -43,6 +47,8 @@ const Dashboard = () => {
         navigate={navigate}
         redirectTo="/input"
       />
+      
+      
       <div className="mt-6 flex gap-4">
         <TotalAsset amount={-25000} currency="USD" />
       <TotalProgress amount={totalPL} percent={totalPLPct} currency="USD" />

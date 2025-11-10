@@ -1,4 +1,7 @@
-import React from "react";
+import supabase from '../services/superbase';
+import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Outlet } from 'react-router-dom';
 
 export default function AddAssetModal({
   open,
@@ -11,6 +14,8 @@ export default function AddAssetModal({
   navigate,             // pass router.push (Next) or useNavigate() (React Router)
   closeOnSubmit = true, // optional
 }) {
+  const [user, setUser] = useState(null);
+  
   const [symbol, setSymbol] = React.useState(initialSymbol);
   const [current, setCurrent] = React.useState(null);
   const [price, setPrice] = React.useState("");
@@ -44,6 +49,23 @@ export default function AddAssetModal({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error('Error', error);
+      } else if (user) {
+        console.log('logged in : ', user);
+        setUser(user);
+      } else {
+        console.log('No user logged in');
+      }
+    };
+
+    fetchUser();
+  }, []);
+
   const notional = price && qty ? Number(price) * Number(qty) : null;
 
   const submit = async (e) => {
@@ -56,20 +78,24 @@ export default function AddAssetModal({
       sl: useTPSL && sl !== "" ? Number(sl) : null,
     };
 
-    try {
-      await onSubmit?.(payload);
-    } finally {
-      if (closeOnSubmit) onClose?.();
+    const { data, error } = await supabase
+      .from('user_portfolio')
+      .insert([
+        {
+          symbol: payload.symbol,
+          quantity: payload.qty,
+          purchase_price: payload.price,
+          user_id: user.id
+        }
+      ]);
+    if (error) {
+      console.error('Error: ', error);
+    } else {
+      console.log('successful', data);
+      setPrice(0)
+      setQty(0)
     }
 
-    // --- NEW: navigate to /input (or custom path) ---
-    if (redirectTo) {
-      if (typeof navigate === "function") {
-        navigate(redirectTo);          // SPA navigation (React Router / Next router.push)
-      } else if (typeof window !== "undefined") {
-        window.location.assign(redirectTo); // fallback full reload
-      }
-    }
   };
 
   if (!open) return null;
@@ -87,7 +113,7 @@ export default function AddAssetModal({
           <div>
             <label className="text-sm font-medium">Cryptocurrency</label>
             <select className="mt-1 w-full rounded-lg border p-2"
-                    value={symbol} onChange={(e) => setSymbol(e.target.value)}>
+              value={symbol} onChange={(e) => setSymbol(e.target.value)}>
               {symbols.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
             <div className="mt-1 text-xs text-muted-foreground">
@@ -99,14 +125,14 @@ export default function AddAssetModal({
             <div>
               <label className="text-sm font-medium">Buy at</label>
               <input type="number" step="any" placeholder="Limit price"
-                     className="mt-1 w-full rounded-lg border p-2"
-                     value={price} onChange={(e) => setPrice(e.target.value)} />
+                className="mt-1 w-full rounded-lg border p-2"
+                value={price} onChange={(e) => setPrice(e.target.value)} />
             </div>
             <div>
               <label className="text-sm font-medium">Amount</label>
               <input type="number" step="any" placeholder="Quantity"
-                     className="mt-1 w-full rounded-lg border p-2"
-                     value={qty} onChange={(e) => setQty(e.target.value)} />
+                className="mt-1 w-full rounded-lg border p-2"
+                value={qty} onChange={(e) => setQty(e.target.value)} />
             </div>
           </div>
 
@@ -127,14 +153,14 @@ export default function AddAssetModal({
                 <div>
                   <label className="text-sm font-medium">Take Profit (price)</label>
                   <input type="number" step="any" placeholder="e.g. 75000"
-                         className="mt-1 w-full rounded-lg border p-2"
-                         value={tp} onChange={(e) => setTp(e.target.value)} />
+                    className="mt-1 w-full rounded-lg border p-2"
+                    value={tp} onChange={(e) => setTp(e.target.value)} />
                 </div>
                 <div>
                   <label className="text-sm font-medium">Stop Loss (price)</label>
                   <input type="number" step="any" placeholder="e.g. 58000"
-                         className="mt-1 w-full rounded-lg border p-2"
-                         value={sl} onChange={(e) => setSl(e.target.value)} />
+                    className="mt-1 w-full rounded-lg border p-2"
+                    value={sl} onChange={(e) => setSl(e.target.value)} />
                 </div>
               </div>
             )}

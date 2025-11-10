@@ -5,8 +5,6 @@ import Navbar from '../components/Navbar';
 import supabase from '../services/superbase';
 
 const InputBid = () => {
-
-
     const [user, setUser] = useState(null);
     useEffect(() => {
         const fetchUser = async () => {
