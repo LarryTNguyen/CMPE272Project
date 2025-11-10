@@ -6,10 +6,13 @@ const ProtectedRoute = ({ children }) => {
   const navigate = useNavigate();
 
   const { isPending, isAuthenicated } = useUser();
-
   useEffect(() => {
-    if (isPending) return;
-    if (!isAuthenicated) navigate('/signin');
+    /*
+    if (!isPending && !isAuthenticated) {
+      navigate('/signin');
+    }
+*/
+
   }, [navigate, isPending, isAuthenicated]);
 
   if (isPending) {
@@ -20,3 +23,4 @@ const ProtectedRoute = ({ children }) => {
 };
 
 export default ProtectedRoute;
+

@@ -8,7 +8,6 @@ export const useUser = () => {
   });
 
   const user = data?.user ?? null;
-  console.log('User from useUser', user);
 
   return {
     user,
@@ -16,3 +15,4 @@ export const useUser = () => {
     isAuthenicated: user?.role === 'authenticated',
   };
 };
+

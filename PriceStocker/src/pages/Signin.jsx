@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom';
 import useSignIn from '../features/authentication/useSignIn';
 import { useForm } from 'react-hook-form';
+import React, { useState, useEffect } from 'react';
+import supabase from '../services/superbase';
 
 const Signin = () => {
+
   const { signin } = useSignIn();
   const { register, handleSubmit } = useForm();
 
@@ -47,6 +50,6 @@ const Signin = () => {
       </Link>
     </div>
   );
+  
 };
-
 export default Signin;

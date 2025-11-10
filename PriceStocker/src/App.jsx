@@ -60,6 +60,7 @@ const router = createBrowserRouter([
 ]);
 
 const App = () => {
+  
   return (
     <QueryClientProvider client={queryClient}>
       <ReactQueryDevtools initialIsOpen={false} />
