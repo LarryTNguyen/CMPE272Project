@@ -11,7 +11,6 @@ const useSignIn = () => {
     onSuccess: () => {
       alert('Sign In successful!');
       navigate('/dashboard');
-      console.log("test")
     },
   });
 

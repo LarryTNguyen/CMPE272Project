@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useState, useEffect} from "react";
 import { useNavigate } from "react-router-dom";
 import { TotalProgress } from "../components/Progress";
 import TotalAsset from "../components/TotalAsset";
@@ -8,6 +8,7 @@ import ActiveTradesCard from "../components/ActiveTradeCard";
 import MockLiveStockCard from "../components/MockLiveStockCard";
 
 const Dashboard = () => {
+  console.log("test")
   const navigate = useNavigate();
   const totalPL = 1425.78;   // absolute profit/loss since account creation
   const totalPLPct = 12.63;  // percent since account creation
@@ -24,7 +25,10 @@ const Dashboard = () => {
     // Save order to your backend / local state
     console.log("Add asset payload:", payload);
   };
+  useEffect(()=>{
+    console.log("test")
 
+  })
   return (
     <main className="p-6">
       <h1 className="text-2xl font-semibold mb-4">Dashboard</h1>

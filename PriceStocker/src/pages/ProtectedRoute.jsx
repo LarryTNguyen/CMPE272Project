@@ -5,17 +5,6 @@ import { useNavigate } from 'react-router-dom';
 const ProtectedRoute = ({ children }) => {
   const navigate = useNavigate();
 
-<<<<<<< HEAD
-  const { isPending, isAuthenicated } = useUser();
-  useEffect(() => {
-    /*
-    if (!isPending && !isAuthenticated) {
-      navigate('/signin');
-    }
-*/
-
-  }, [navigate, isPending, isAuthenicated]);
-=======
   const { isPending, isAuthenticated } = useUser();
 
   useEffect(() => {
@@ -23,7 +12,6 @@ const ProtectedRoute = ({ children }) => {
       navigate('/signin');
     }
   }, [navigate, isPending, isAuthenticated]);
->>>>>>> d08252bee1bb1379eec600bea584074c61509e64
 
   if (isPending) {
     <div>Loading...</div>;
@@ -33,4 +21,3 @@ const ProtectedRoute = ({ children }) => {
 };
 
 export default ProtectedRoute;
-
