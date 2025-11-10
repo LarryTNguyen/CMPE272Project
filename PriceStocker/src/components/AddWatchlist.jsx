@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 
-export default function AddAssetModal({
+export default function AddWatchlist({
   open,
   onClose,
   onSubmit,
@@ -78,17 +78,16 @@ export default function AddAssetModal({
     };
 
     const { data, error } = await supabase
-      .from('user_portfolio')
+      .from('watchlist')
       .insert([
         {
           symbol: payload.symbol,
-          quantity: payload.qty,
-          purchase_price: payload.price,
+          watch_price: payload.price,
           user_id: user.id
         }
       ]);
     if (error) {
-      console.error('Error: ', error);
+      console.error('watchlist Error: ', error);
     } else {
       console.log('successful', data);
       setPrice(0)
@@ -104,7 +103,7 @@ export default function AddAssetModal({
       <div className="absolute inset-0 bg-black/25 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-md rounded-2xl border bg-white text-gray-900 p-6 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Add Asset</h2>
+          <h2 className="text-lg font-semibold">Add to Watchlist</h2>
           <button className="p-1 rounded-md hover:bg-black/5" onClick={onClose} aria-label="Close">✕</button>
         </div>
 
@@ -122,17 +121,12 @@ export default function AddAssetModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium">Buy at</label>
+              <label className="text-sm font-medium">Alert at</label>
               <input type="number" step="any" placeholder="Limit price"
                 className="mt-1 w-full rounded-lg border p-2"
                 value={price} onChange={(e) => setPrice(e.target.value)} />
             </div>
-            <div>
-              <label className="text-sm font-medium">Amount</label>
-              <input type="number" step="any" placeholder="Quantity"
-                className="mt-1 w-full rounded-lg border p-2"
-                value={qty} onChange={(e) => setQty(e.target.value)} />
-            </div>
+            
           </div>
 
           {notional != null && (
