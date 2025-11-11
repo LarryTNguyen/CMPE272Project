@@ -81,7 +81,7 @@ export default function AddAssetModal({
       .from('user_portfolio')
       .insert([
         {
-          symbol: payload.symbol,
+          ticker: payload.symbol,
           quantity: payload.qty,
           purchase_price: payload.price,
           user_id: user.id

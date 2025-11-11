@@ -81,7 +81,7 @@ export default function AddWatchlist({
       .from('watchlist')
       .insert([
         {
-          symbol: payload.symbol,
+          ticker: payload.symbol,
           watch_price: payload.price,
           user_id: user.id
         }

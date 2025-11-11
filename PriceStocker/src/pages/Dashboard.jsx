@@ -5,13 +5,12 @@ import TotalAsset from "../components/TotalAsset";
 import AddNew from "../components/AddNew";
 import AddNewWatchlist from "../components/AddNewWatchlist";
 import AddWatchlist from "../components/AddWatchlist";
-
+import supabase from '../services/superbase';
 import AddAssetModal from "../components/AddAssetModal";
 import ActiveTradesCard from "../components/ActiveTradeCard";
-import MockLiveStockCard from "../components/MockLiveStockCard";
+import LiveStockCard from "../components/LiveStockCard";
 
 const Dashboard = () => {
-  console.log("test")
   const navigate = useNavigate();
   const totalPL = 1425.78;   // absolute profit/loss since account creation
   const totalPLPct = 12.63;  // percent since account creation
@@ -19,6 +18,8 @@ const Dashboard = () => {
   const [watchlistOpen, setWatchlistOpen] = React.useState(false);
   const [symbols, setSymbols] = useState(["AAPL", "MSFT", "TSLA"]);
   const [input, setInput] = useState("");
+  const [user, setUser] = useState(null);
+
   const add = () => {
     const s = input.toUpperCase().trim();
     if (!s || symbols.includes(s)) return;
@@ -30,9 +31,33 @@ const Dashboard = () => {
     console.log("Add asset payload:", payload);
   };
   useEffect(() => {
-    console.log("test")
+    const fetchUser = async () => {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) console.error("Auth error:", error);
+      else if (user) setUser(user);
+    };
+    fetchUser();
+  }, []);
 
-  })
+  useEffect(() => {
+    if (!user) return;
+    const fetchWatchlist = async () => {
+      const { data, error } = await supabase
+        .from("watchlist")
+        .select("ticker")
+        .eq("user_id", user.id);
+
+      if (error) {
+        console.error("Error fetching watchlist:", error);
+      } else {
+        const tickers = data.map(row => row.ticker);
+        console.log("tickers", tickers)
+        setSymbols(tickers);
+      }
+    };
+
+    fetchWatchlist();
+  }, [user]);
   return (
     <main className="p-6">
       <h1 className="text-2xl font-semibold mb-4">Dashboard</h1>
@@ -68,7 +93,7 @@ const Dashboard = () => {
       </div>
 
       <div style={{ maxWidth: 1200, margin: "24px auto", padding: 16 }}>
-        <h1 style={{ margin: "0 0 16px" }}>Mock Live Stocks</h1>
+        <h1 style={{ margin: "0 0 16px" }}>Watchlist Stocks</h1>
 
         <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
           <input
@@ -83,7 +108,7 @@ const Dashboard = () => {
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(360px,1fr))", gap: 12 }}>
           {symbols.map((s) => (
-            <MockLiveStockCard key={s} symbol={s} />
+            <LiveStockCard key={s} symbol={s} />
           ))}
         </div>
       </div>

@@ -1,14 +1,15 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createChart } from "lightweight-charts";
+import supabase from '../services/superbase';
 
-function MockLiveStockCard({
+function LiveStockCard({
   symbol = "AAPL",
   height = 240,
   startPrice = 100,
   tickMs = 350,
   volatilityBps = 25,
-  tradesPanelHeight = 200,   // 👈 fixed-height trades panel (px)
-  maxTrades = 200,           // keep a rolling buffer
+  tradesPanelHeight = 200,
+  maxTrades = 200,
 }) {
   const containerRef = useRef(null);
   const chartApiRef = useRef(null);
@@ -19,7 +20,7 @@ function MockLiveStockCard({
   const [changePct, setChangePct] = useState(0);
   const [trades, setTrades] = useState([]);
   const pointsRef = useRef([]);
-
+  const [data, setData] = useState({})
   const fmt = useMemo(
     () => new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 2 }),
     []
@@ -46,7 +47,7 @@ function MockLiveStockCard({
     const addSeries = chartApi.addAreaSeries;
     if (typeof addSeries !== "function") {
       console.error("lightweight-charts not imported correctly. Use: import { createChart } from 'lightweight-charts';");
-      return () => {};
+      return () => { };
     }
 
     const series = chartApi.addAreaSeries({ lineWidth: 2, priceLineVisible: true });
@@ -61,76 +62,59 @@ function MockLiveStockCard({
     return () => {
       ro.disconnect();
       timerRef.current && clearInterval(timerRef.current);
-      try { chartApi.remove(); } catch {}
+      try { chartApi.remove(); } catch { }
       chartApiRef.current = null;
       seriesRef.current = null;
     };
   }, [height]);
 
-  // seed + ticks + mock trades
   useEffect(() => {
     if (!seriesRef.current) return;
 
-    // seed
-    const now = Math.floor(Date.now() / 1000);
-    let p = Math.max(0.5, Number(startPrice) || 100);
-    pointsRef.current = [];
-    for (let i = 60; i > 0; i--) {
-      pointsRef.current.push({ time: now - i, value: p });
-      p = Math.max(0.5, p + (Math.random() - 0.5) * (p * (volatilityBps / 10000) * 0.2));
-    }
-    seriesRef.current.setData(pointsRef.current);
-    setPrice(pointsRef.current.at(-1)?.value ?? null);
-    setChangePct(0);
-    setTrades([]);
+    const fetchStock = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("stock_data")
+          .select("*")
+          .eq("ticker", symbol)
+          .single();
 
-    // ticks
-    timerRef.current && clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => {
-      const last = pointsRef.current.at(-1);
-      const vol = Math.max(1, volatilityBps) / 10000;
-      const drift = (Math.random() - 0.5) * vol * last.value;
-      const next = {
-        time: Math.floor(Date.now() / 1000),
-        value: Number(Math.max(0.5, last.value + drift).toFixed(2)),
-      };
+        if (error) throw error;
+        if (!data) return;
+        setData(data)
+        const nextPoint = {
+          time: Math.floor(new Date(data.last_updated).getTime() / 1000),
+          value: data.current_price,
+        };
+        if (seriesRef.current && data) {
+          pointsRef.current.push(nextPoint);
+          if (pointsRef.current.length > 1200) pointsRef.current.shift();
+          seriesRef.current.update(nextPoint);
 
-      pointsRef.current.push(next);
-      if (pointsRef.current.length > 1200) pointsRef.current.shift();
-      seriesRef.current.update(next);
-
-      setPrice(next.value);
-      const first = pointsRef.current[0]?.value;
-      if (first) setChangePct(((next.value - first) / first) * 100);
-
-      // mock trade ~60% of ticks
-      if (Math.random() < 0.6) {
-        const side = Math.random() < 0.5 ? "buy" : "sell";
-        const size = Math.floor(10 + Math.random() * 1200);
-        const spread = Math.random() * Math.max(0.02, next.value * 0.0006);
-        const tradePrice = Number(
-          (side === "buy" ? next.value + spread : Math.max(0.01, next.value - spread)).toFixed(2)
-        );
-        const t = Date.now();
-
-        setTrades((prev) => {
-          const nextArr = [{ time: t, price: tradePrice, size, side }, ...prev];
-          if (nextArr.length > maxTrades) nextArr.length = maxTrades;
-          return nextArr;
-        });
+          setPrice(data.current_price);
+          setChangePct(data.percent_change);
+        }
+      } catch (err) {
+        console.error(err);
       }
-    }, tickMs);
+    };
 
-    return () => timerRef.current && clearInterval(timerRef.current);
-  }, [symbol, startPrice, tickMs, volatilityBps, maxTrades]);
+    fetchStock();
+
+    const interval = setInterval(fetchStock, 1000);
+
+    return () => clearInterval(interval);
+  }, [symbol]);
+
+
 
   return (
     <div style={{ background: "#12161c", border: "1px solid #1e232b", borderRadius: 10, padding: 8, color: "#e6e9ef" }}>
-      {/* header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "4px 4px 0" }}>
         <strong>{String(symbol).toUpperCase()}</strong>
         <div style={{ fontVariantNumeric: "tabular-nums" }}>
           {price == null ? "—" : fmt.format(price)}
+
           <span
             style={{
               marginLeft: 8,
@@ -141,12 +125,12 @@ function MockLiveStockCard({
             {price == null ? "" : ` ${(changePct >= 0 ? "+" : "")}${changePct.toFixed(2)}%`}
           </span>
         </div>
+
       </div>
 
       {/* chart */}
       <div ref={containerRef} style={{ width: "100%", height }} />
 
-      {/* trades panel (contained, scrollable) */}
       <div
         style={{
           marginTop: 8,
@@ -155,6 +139,8 @@ function MockLiveStockCard({
           background: "#0f1318",
         }}
       >
+        <strong>{data.name}</strong>
+
         <div
           style={{
             padding: "8px 10px",
@@ -201,4 +187,4 @@ function MockLiveStockCard({
     </div>
   );
 }
-export default MockLiveStockCard;
+export default LiveStockCard;
