@@ -20,12 +20,29 @@ const Dashboard = () => {
   const [input, setInput] = useState("");
   const [user, setUser] = useState(null);
 
-  const add = () => {
+  const add = async () => {
     const s = input.toUpperCase().trim();
     if (!s || symbols.includes(s)) return;
-    setSymbols([s, ...symbols]);
-    setInput("");
+    const { data, error } = await supabase
+      .from('watchlist')
+      .insert([
+        {
+          ticker: s,
+          watch_price: 0,
+          user_id: user.id
+        }
+      ])
+      .select();;
+    if (error) {
+      console.error('watchlist Error: ', error);
+    } else {
+      console.log('successful', data);
+      setSymbols((prev) => [...prev, s]);
+      setInput("");
+    }
+
   };
+
   const handleSubmit = (payload) => {
     // Save order to your backend / local state
     console.log("Add asset payload:", payload);
@@ -58,6 +75,10 @@ const Dashboard = () => {
 
     fetchWatchlist();
   }, [user]);
+
+  const handleDeleteFromUI = (ticker) => {
+    setSymbols((prev) => prev.filter((s) => s !== ticker));
+  };
   return (
     <main className="p-6">
       <h1 className="text-2xl font-semibold mb-4">Dashboard</h1>
@@ -108,7 +129,7 @@ const Dashboard = () => {
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(360px,1fr))", gap: 12 }}>
           {symbols.map((s) => (
-            <LiveStockCard key={s} symbol={s} />
+            <LiveStockCard key={s} symbol={s} onDelete={handleDeleteFromUI} />
           ))}
         </div>
       </div>

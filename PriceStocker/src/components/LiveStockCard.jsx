@@ -10,6 +10,7 @@ function LiveStockCard({
   volatilityBps = 25,
   tradesPanelHeight = 200,
   maxTrades = 200,
+  onDelete,
 }) {
   const containerRef = useRef(null);
   const chartApiRef = useRef(null);
@@ -67,7 +68,22 @@ function LiveStockCard({
       seriesRef.current = null;
     };
   }, [height]);
+  const handleDelete = async () => {
+    try {
+      const { error } = await supabase
+        .from("watchlist")
+        .delete()
+        .eq("ticker", symbol);
 
+      if (error) throw error;
+
+      console.log(`Deleted ${symbol} from watchlist`);
+      if (onDelete) onDelete(symbol); 
+    } catch (err) {
+      console.error("Error deleting item:", err.message);
+      alert("Failed to delete from watchlist");
+    }
+  };
   useEffect(() => {
     if (!seriesRef.current) return;
 
@@ -141,49 +157,41 @@ function LiveStockCard({
       >
         <strong>{data.name}</strong>
 
-        <div
-          style={{
-            padding: "8px 10px",
-            fontSize: 12,
-            color: "#8a9099",
-            borderBottom: "1px solid #1e232b",
-          }}
-        >
-          Active trades (mock)
-        </div>
+
 
         <div
           style={{
-            height: tradesPanelHeight,       // 👈 fixed height
-            overflowY: "auto",               // 👈 scroll inside the box
+            height: tradesPanelHeight,       
+            overflowY: "auto",               
             overscrollBehavior: "contain",
             padding: 8,
             display: "grid",
             gap: 6,
           }}
         >
-          {trades.length === 0 && <div style={{ color: "#8a9099" }}>Waiting for prints…</div>}
-          {trades.map((t, i) => (
-            <div
-              key={i}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "90px 60px 1fr 80px",
-                gap: 8,
-                alignItems: "center",
-                fontVariantNumeric: "tabular-nums",
-              }}
-            >
-              <span style={{ color: "#8a9099" }}>{fmtTime.format(new Date(t.time))}</span>
-              <span style={{ color: t.side === "buy" ? "#1fbf75" : "#e15241" }}>
-                {t.side.toUpperCase()}
-              </span>
-              <span>{fmt.format(t.price)}</span>
-              <span style={{ textAlign: "right" }}>{t.size.toLocaleString()}</span>
-            </div>
-          ))}
+          <h1>Open: {data.open_price}</h1>
+          <h1>Previous Close: {data.previous_close}</h1>
+          <h1>Percent Change: {data.percent_change}%</h1>
+          <h1>Today's high: {data.high_price}</h1>
+          <h1>Today's low: {data.low_price}</h1>
         </div>
       </div>
+      <button
+        onClick={handleDelete}
+        style={{
+          marginTop: 10,
+          width: "100%",
+          background: "#e15241",
+          color: "#fff",
+          border: "none",
+          borderRadius: 6,
+          padding: "8px 12px",
+          cursor: "pointer",
+          fontWeight: "bold",
+        }}
+      >
+        Delete from Watchlist
+      </button>
     </div>
   );
 }
