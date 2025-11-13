@@ -1,56 +1,86 @@
-import Logo from './Logo';
-import { Link } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import supabase from '../services/superbase';
+import Logo from './Logo';
+
 const Navbar = () => {
   const [user, setUser] = useState(null);
+  const navigate = useNavigate();
+
   useEffect(() => {
     const fetchUser = async () => {
       const { data: { user }, error } = await supabase.auth.getUser();
       if (error) {
-        console.error('Error', error);
+        console.error('Error fetching user:', error);
       } else if (user) {
-        console.log('logged in : ', user);
         setUser(user);
-      } else {
-        console.log('No user logged in');
       }
     };
-
     fetchUser();
   }, []);
-  return (
 
-    <div className="bg- flex justify-between rounded-b-sm bg-gray-600 px-3 py-4">
-      <Logo />
-      <div className="flex justify-evenly gap-5">
-        <button className="text-gray-50 transition-all duration-300 hover:text-gray-400">
-          <Link to="/dashboard">Dashboard</Link>
-        </button>
-        <button className="text-gray-50 transition-all duration-300 hover:text-gray-400">
-          Profile
-        </button>
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate('/');
+    window.location.reload();
+  };
+
+  return (
+    <nav className="bg-gray-900/90 backdrop-blur-md border-b border-gray-800 px-6 py-3 flex items-center justify-between shadow-md">
+      <div className="flex items-center gap-3">
+        <Logo />
+      </div>
+
+      <div className="flex items-center gap-4">
+        <Link
+          to="/home"
+          className="px-3 py-2 rounded-lg text-gray-200 font-medium transition-all duration-200 hover:text-white hover:bg-gray-800/70 active:scale-95"
+        >
+          Home
+        </Link>
+        <Link
+          to="/dashboard"
+          className="px-3 py-2 rounded-lg text-gray-200 font-medium transition-all duration-200 hover:text-white hover:bg-gray-800/70 active:scale-95"
+        >
+          Dashboard
+        </Link>
+      </div>
+
+      <div className="flex items-center gap-3">
         {user ? (
           <>
-            <p className="text-gray-50 transition-all duration-300 hover:text-gray-400" > {user.user_metadata?.full_name || user.email}</p>
-            <button className="text-gray-50 transition-all duration-300 hover:text-gray-400" onClick={async () => {
-              await supabase.auth.signOut();
-              window.location.reload();
-            }
-            }>Logout</button>
+            <Link
+              to={`/profile/${user.user_metadata?.username || user.email.split('@')[0]}`}
+              className="px-3 py-2 rounded-lg bg-gray-800 text-gray-100 font-medium transition-all duration-300 hover:bg-gray-700 hover:text-white active:scale-95 shadow-sm"
+            >
+              {user.user_metadata?.full_name || user.email}
+            </Link>
+
+            <button
+              onClick={handleSignOut}
+              className="px-3 py-2 rounded-lg text-red-400 font-medium transition-all duration-200 hover:bg-red-500/20 hover:text-red-300 active:scale-95"
+            >
+              Logout
+            </button>
           </>
-        ) : (<div>
-          <button className="text-gray-50 transition-all duration-300 hover:text-gray-400">
-            <Link to="/signin"> Sign In </Link>
-          </button>
-          <button className="text-gray-50 transition-all duration-300 hover:text-gray-400">
-            <Link to="/signup"> Sign Up</Link>
-          </button>
-        </div>)}
-
-
+        ) : (
+          <>
+            <Link
+              to="/signin"
+              className="px-3 py-2 rounded-lg text-gray-200 font-medium transition-all duration-200 hover:bg-blue-600/70 hover:text-white active:scale-95"
+            >
+              Sign In
+            </Link>
+            <Link
+              to="/signup"
+              className="px-3 py-2 rounded-lg text-gray-200 font-medium transition-all duration-200 hover:bg-green-600/70 hover:text-white active:scale-95"
+            >
+              Sign Up
+            </Link>
+          </>
+        )}
       </div>
-    </div>
+    </nav>
   );
 };
 

@@ -5,11 +5,11 @@ import TotalAsset from "../components/TotalAsset";
 import AddNew from "../components/AddNew";
 import AddNewWatchlist from "../components/AddNewWatchlist";
 import AddWatchlist from "../components/AddWatchlist";
-import supabase from '../services/superbase';
 import AddAssetModal from "../components/AddAssetModal";
 import ActiveTradesCard from "../components/ActiveTradeCard";
 import LiveStockCard from "../components/LiveStockCard";
 import tickersData from '../data/tickers.json';
+import supabase from '../services/superbase';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -69,10 +69,9 @@ const Dashboard = () => {
     const value = e.target.value.toUpperCase();
     setInput(value);
 
-    // Filter suggestions dynamically
     if (value.length > 0) {
       const filtered = TICKERS.filter((t) => t.startsWith(value)).slice(0, 6);
-      console.log("Filtered suggestions:", filtered); // See what matches
+      console.log("Filtered suggestions:", filtered); 
 
       setSuggestions(filtered);
     } else {
@@ -177,6 +176,11 @@ const Dashboard = () => {
                 ))}
               </ul>
             )}
+
+
+
+
+            
           </div>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(360px,1fr))", gap: 12 }}>

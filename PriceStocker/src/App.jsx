@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard';
 import AppLayout from './pages/AppLayout';
 import InputBid from './pages/InputBid';
 import ProtectedRoute from './pages/ProtectedRoute';
+import Profile from './pages/Profile'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
@@ -56,6 +57,10 @@ const router = createBrowserRouter([
   {
     path: '/input',
     element: <InputBid />,
+  },
+  {
+    path: '/profile/:username',
+    element: <Profile/>,
   },
 ]);
 

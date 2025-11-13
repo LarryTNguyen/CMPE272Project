@@ -2,7 +2,7 @@ import supabase from '../services/superbase';
 import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
-
+import tickersData from '../data/tickers.json';
 export default function AddWatchlist({
   open,
   onClose,
@@ -14,7 +14,10 @@ export default function AddWatchlist({
   closeOnSubmit = true, // optional
 }) {
   const [user, setUser] = useState(null);
-  
+  const TICKERS = tickersData.map(item => item.ticker);
+  const [suggestions, setSuggestions] = useState([]);
+  const [input, setInput] = useState("");
+
   const [symbol, setSymbol] = React.useState(initialSymbol);
   const [current, setCurrent] = React.useState(null);
   const [price, setPrice] = React.useState("");
@@ -81,7 +84,7 @@ export default function AddWatchlist({
       .from('watchlist')
       .insert([
         {
-          ticker: payload.symbol,
+          ticker: input,
           watch_price: payload.price,
           user_id: user.id
         }
@@ -98,6 +101,23 @@ export default function AddWatchlist({
 
   if (!open) return null;
 
+  const handleChange = (e) => {
+    const value = e.target.value.toUpperCase();
+    setInput(value);
+
+    if (value.length > 0) {
+      const filtered = TICKERS.filter((t) => t.startsWith(value)).slice(0, 6);
+
+      setSuggestions(filtered);
+    } else {
+      setSuggestions([]);
+    }
+  };
+  const handleSelect = (symbol) => {
+    setInput(symbol);
+    setSuggestions([]);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/25 backdrop-blur-sm" onClick={onClose} />
@@ -107,63 +127,81 @@ export default function AddWatchlist({
           <button className="p-1 rounded-md hover:bg-black/5" onClick={onClose} aria-label="Close">✕</button>
         </div>
 
-        <form onSubmit={submit} className="space-y-4">
-          <div>
-            <label className="text-sm font-medium">Cryptocurrency</label>
-            <select className="mt-1 w-full rounded-lg border p-2"
-              value={symbol} onChange={(e) => setSymbol(e.target.value)}>
-              {symbols.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
-            <div className="mt-1 text-xs text-muted-foreground">
-              Current: {current == null ? "…" : current.toLocaleString(undefined, { maximumFractionDigits: 8 })}
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-3">
+        <div className="relative">
+          <form onSubmit={submit} className="space-y-4">
             <div>
-              <label className="text-sm font-medium">Alert at</label>
-              <input type="number" step="any" placeholder="Limit price"
-                className="mt-1 w-full rounded-lg border p-2"
-                value={price} onChange={(e) => setPrice(e.target.value)} />
+              <label className="text-sm font-medium"></label>
+              <input
+                value={input}
+                onChange={handleChange}
+                onKeyDown={(e) => e.key === "Enter" && add(input)}
+                placeholder="Add symbol e.g. NVDA"
+                style={{ width: "80%", padding: "10px 12px" }}
+              />
+
             </div>
-            
-          </div>
+            {suggestions.length > 0 && (
+              <ul className="absolute top-[50px] bg-[#90a2b7ff] border border-[#1e232b] rounded-lg list-none z-10 shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
+                {suggestions.map((s) => (
+                  <li
+                    key={s}
+                    onClick={() => handleSelect(s)}
+                    onMouseDown={(e) => e.preventDefault()}
+                    className="px-3 py-2.5 cursor-pointer text-black border-b border-[#1e232b] hover:bg-[#7d8fa3] transition-colors"
+                  >
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            )}
 
-          {notional != null && (
-            <div className="text-xs text-muted-foreground">
-              Order value ≈ {notional.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium">Alert at</label>
+                <input type="number" step="any" placeholder="Limit price"
+                  className="mt-1 w-full rounded-lg border p-2"
+                  value={price} onChange={(e) => setPrice(e.target.value)} />
+              </div>
+
             </div>
-          )}
 
-          <div className="pt-2">
-            <label className="flex items-center gap-2">
-              <input type="checkbox" checked={useTPSL} onChange={(e) => setUseTPSL(e.target.checked)} />
-              <span className="text-sm font-medium">Enable TP/SL</span>
-            </label>
-
-            {useTPSL && (
-              <div className="mt-2 grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-sm font-medium">Take Profit (price)</label>
-                  <input type="number" step="any" placeholder="e.g. 75000"
-                    className="mt-1 w-full rounded-lg border p-2"
-                    value={tp} onChange={(e) => setTp(e.target.value)} />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Stop Loss (price)</label>
-                  <input type="number" step="any" placeholder="e.g. 58000"
-                    className="mt-1 w-full rounded-lg border p-2"
-                    value={sl} onChange={(e) => setSl(e.target.value)} />
-                </div>
+            {notional != null && (
+              <div className="text-xs text-muted-foreground">
+                Order value ≈ {notional.toLocaleString(undefined, { maximumFractionDigits: 2 })}
               </div>
             )}
-          </div>
 
-          <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="rounded-lg border px-4 py-2">Cancel</button>
-            <button type="submit" className="rounded-lg bg-black text-white px-4 py-2 hover:opacity-90">Add</button>
-          </div>
-        </form>
+            <div className="pt-2">
+              <label className="flex items-center gap-2">
+                <input type="checkbox" checked={useTPSL} onChange={(e) => setUseTPSL(e.target.checked)} />
+                <span className="text-sm font-medium">Enable TP/SL</span>
+              </label>
+
+              {useTPSL && (
+                <div className="mt-2 grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium">Take Profit (price)</label>
+                    <input type="number" step="any" placeholder="e.g. 75000"
+                      className="mt-1 w-full rounded-lg border p-2"
+                      value={tp} onChange={(e) => setTp(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Stop Loss (price)</label>
+                    <input type="number" step="any" placeholder="e.g. 58000"
+                      className="mt-1 w-full rounded-lg border p-2"
+                      value={sl} onChange={(e) => setSl(e.target.value)} />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button type="button" onClick={onClose} className="rounded-lg border px-4 py-2">Cancel</button>
+              <button type="submit" className="rounded-lg bg-black text-white px-4 py-2 hover:opacity-90">Add</button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
