@@ -1,6 +1,6 @@
 import Logo from './Logo';
 import { Link } from 'react-router-dom';
-import useSignout from '../features/authentication/useLogout';
+import useSignout from '../features/authentication/useSignOut';
 const Navbar = () => {
   const { signout } = useSignout();
   return (

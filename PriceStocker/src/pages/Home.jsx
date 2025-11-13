@@ -1,9 +1,9 @@
-import AddFunds from '../components/AddFunds';
+import OrderForm from '../components/OrderForm';
 
 const Home = () => {
   return (
     <div>
-      <AddFunds />
+      <OrderForm />
     </div>
   );
 };
