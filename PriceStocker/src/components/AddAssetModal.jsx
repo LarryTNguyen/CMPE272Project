@@ -7,7 +7,7 @@ import tickersData from '../data/tickers.json';
 export default function AddAssetModal({
   open,
   onClose,
-  onSubmit,
+  onSubmit = () => { },
   symbols = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "XRPUSDT", "DOGEUSDT"],
   initialSymbol = "BTCUSDT",
   navigate,
@@ -97,6 +97,8 @@ export default function AddAssetModal({
       setPrice(0)
       setQty(0)
     }
+    onSubmit()
+    if (closeOnSubmit && onClose) onClose();
 
   };
 

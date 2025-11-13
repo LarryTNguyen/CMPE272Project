@@ -71,7 +71,7 @@ const Dashboard = () => {
 
     if (value.length > 0) {
       const filtered = TICKERS.filter((t) => t.startsWith(value)).slice(0, 6);
-      console.log("Filtered suggestions:", filtered); 
+      console.log("Filtered suggestions:", filtered);
 
       setSuggestions(filtered);
     } else {
@@ -85,22 +85,25 @@ const Dashboard = () => {
     setSuggestions([]); // hide suggestions
   };
 
+  const fetchWatchlist = async () => {
+    const { data, error } = await supabase
+      .from("watchlist")
+      .select("ticker")
+      .eq("user_id", user.id);
+
+    if (error) {
+      console.error("Error fetching watchlist:", error);
+    } else {
+      const tickers = data.map(row => row.ticker);
+      console.log("tickers", tickers)
+      setSymbols(tickers);
+    }
+  };
+  const handleWatchlistAdded = () => {
+    fetchWatchlist(); // refresh after adding a new ticker
+  };
   useEffect(() => { // FETCH WATCH LIST FROM DATABASE TO DISPLAY
     if (!user) return;
-    const fetchWatchlist = async () => {
-      const { data, error } = await supabase
-        .from("watchlist")
-        .select("ticker")
-        .eq("user_id", user.id);
-
-      if (error) {
-        console.error("Error fetching watchlist:", error);
-      } else {
-        const tickers = data.map(row => row.ticker);
-        console.log("tickers", tickers)
-        setSymbols(tickers);
-      }
-    };
 
     fetchWatchlist();
   }, [user]);
@@ -125,7 +128,7 @@ const Dashboard = () => {
       <AddWatchlist
         open={watchlistOpen}
         onClose={() => setWatchlistOpen(false)}
-        onSubmit={handleSubmit}
+        onSubmit={handleWatchlistAdded}
         symbols={["BTCUSDT", "ETHUSDT", "SOLUSDT"]}
         navigate={navigate}
       />
@@ -180,7 +183,7 @@ const Dashboard = () => {
 
 
 
-            
+
           </div>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(360px,1fr))", gap: 12 }}>

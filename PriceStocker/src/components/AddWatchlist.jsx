@@ -6,10 +6,9 @@ import tickersData from '../data/tickers.json';
 export default function AddWatchlist({
   open,
   onClose,
-  onSubmit,
+  onSubmit = () => { },
   symbols = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "XRPUSDT", "DOGEUSDT"],
   initialSymbol = "BTCUSDT",
-  // NEW: redirect behavior
   navigate,             // pass router.push (Next) or useNavigate() (React Router)
   closeOnSubmit = true, // optional
 }) {
@@ -91,13 +90,15 @@ export default function AddWatchlist({
       ]);
     if (error) {
       console.error('watchlist Error: ', error);
-    } else {
-      console.log('successful', data);
-      setPrice(0)
-      setQty(0)
     }
 
+    setPrice(0)
+    setQty(0)
+
+
+    if (closeOnSubmit && onClose) onClose();
   };
+  onSubmit();
 
   if (!open) return null;
 
