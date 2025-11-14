@@ -1,0 +1,8 @@
+**/node_modules
+**/.cache
+.git
+db
+docs
+sdk
+supabase
+PriceStocker/supabase

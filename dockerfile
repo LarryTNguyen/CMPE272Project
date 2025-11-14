@@ -1,13 +1,17 @@
-FROM node:lts-alpine AS build
+# ---- Build stage ----
+FROM node:20-alpine AS build
 WORKDIR /app
-COPY package*.json ./
+# install deps using only package files to enable layer caching
+COPY PriceStocker/package*.json ./
 RUN npm ci
-COPY . .
+# now bring in the app source and build
+COPY PriceStocker/ ./
 RUN npm run build
 
-FROM caddy
-WORKDIR /app
-COPY Caddyfile ./
-RUN caddy fmt Caddyfile --overwrite
+# ---- Runtime stage (serve static) ----
+FROM caddy:2.7-alpine
+WORKDIR /srv
+COPY caddyfile /etc/caddy/Caddyfile
 COPY --from=build /app/dist ./dist
-CMD ["caddy","run","--config","Caddyfile","--adapter","caddyfile"]
+EXPOSE 3000
+CMD ["caddy","run","--config","/etc/caddy/Caddyfile","--adapter","caddyfile"]
