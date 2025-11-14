@@ -98,10 +98,15 @@ function LiveStockCard({
         if (error) throw error;
         if (!data) return;
         setData(data)
+
+
+        const safeNumber = (v) =>
+          typeof v === "number" && !isNaN(v) ? v : 0;
         const nextPoint = {
           time: Math.floor(new Date(data.last_updated).getTime() / 1000),
-          value: data.current_price,
+          value: safeNumber(data.current_price),
         };
+
         if (seriesRef.current && data) {
           pointsRef.current.push(nextPoint);
           if (pointsRef.current.length > 1200) pointsRef.current.shift();

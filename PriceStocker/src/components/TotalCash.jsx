@@ -40,7 +40,7 @@ const TotalCash = () => {
   return (
     <div className="h-28 aspect-square rounded-2xl border bg-background shadow-sm p-4 flex flex-col items-center justify-center text-center">
       <div className="text-sm font-medium text-muted-foreground">Buying Power:</div>
-      <div className="mt-2 text-3xl font-bold tracking-tight text-yellow-600">
+      <div className="mt-2 text-5xl font-bold tracking-tight text-green-600">
         {loading ? "Loading..." : formatCash(profile?.cash ?? 0)}
       </div>
     </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { TotalProgress } from "../components/Progress";
+import TotalProgress from "../components/TotalProgress";
 import TotalAsset from "../components/TotalAsset";
 import AddNew from "../components/AddNew";
 import AddNewWatchlist from "../components/AddNewWatchlist";
@@ -72,7 +72,6 @@ const Dashboard = () => {
 
     if (value.length > 0) {
       const filtered = TICKERS.filter((t) => t.startsWith(value)).slice(0, 6);
-      console.log("Filtered suggestions:", filtered);
 
       setSuggestions(filtered);
     } else {
@@ -83,29 +82,69 @@ const Dashboard = () => {
 
   const handleSelect = (symbol) => {
     setInput(symbol);
-    setSuggestions([]); // hide suggestions
+    setSuggestions([]); 
   };
 
-  const fetchWatchlist = async () => { // FETCH WATCH LIST FROM DATABASE TO DISPLAY
-    const { data, error } = await supabase
-      .from("watchlist")
-      .select("ticker")
-      .eq("user_id", user.id);
+  const fetchWatchlist = async () => {
+    try {
+      const { data: session, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error("Auth error while fetching watchlist:", error);
+        return;
+      }
 
-    if (error) {
-      console.error("Error fetching watchlist:", error);
-    } else {
-      const tickers = data.map(row => row.ticker);
-      setSymbols(tickers);
+      const currentUser = session?.user;
+      if (!currentUser) {
+        console.warn("User not ready — retrying fetchWatchlist in 300ms...");
+        setTimeout(fetchWatchlist, 300); // retry until user loads
+        return;
+      }
+
+      const { data: rows, error: wlError } = await supabase
+        .from("watchlist")
+        .select("ticker")
+        .eq("user_id", currentUser.id);
+
+      if (wlError) {
+        console.error("Database error fetching watchlist:", wlError);
+        return;
+      }
+
+      setSymbols(rows.map((row) => row.ticker));
+    } catch (err) {
+      console.error("Unexpected fetchWatchlist error:", err);
     }
   };
-  const handleWatchlistAdded = () => {
-    fetchWatchlist(); // refresh after adding a new ticker
+
+  const handleWatchlistAdded = async () => {
+    const { data: session } = await supabase.auth.getUser();
+    const currentUser = session?.user;
+
+    if (!currentUser) {
+      console.warn("User not ready — retrying handleWatchlistAdded...");
+      setTimeout(handleWatchlistAdded, 300);
+      return;
+    }
+
+    fetchWatchlist();
   };
   useEffect(() => {
-    if (!user) return;
+    const load = async () => {
+      const { data } = await supabase.auth.getUser();
+      const authUser = data?.user;
 
-  }, [user]);
+      if (!authUser) {
+        console.warn("User not ready — retrying Dashboard preload");
+        setTimeout(load, 300);
+        return;
+      }
+
+      setUser(authUser);
+      fetchWatchlist();
+    };
+
+    load();
+  }, []);
 
   return (
     <main className="p-6">

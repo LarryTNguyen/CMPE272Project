@@ -70,7 +70,7 @@ const TotalAsset = () => {
                   flex flex-col items-center justify-center text-center `}
     >
       <div className="text-sm font-medium text-muted-foreground">Total Assets</div>
-      <div className={`mt-2 text-3xl font-bold tracking-tight ${color}`}>
+      <div className={`mt-2 text-5xl font-bold tracking-tight black`}>
         {loading ? "Loading..." : formatCurrency(asset, "USD")}
       </div>
     </div>
