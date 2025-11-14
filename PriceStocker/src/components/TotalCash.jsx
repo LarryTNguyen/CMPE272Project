@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
 import supabase from '../services/superbase';
-import Navbar from "../components/Navbar";
-import { DollarSign, User, Zap, LogOut } from 'lucide-react';
 
 const formatCash = (cash) =>
   Number(cash).toLocaleString("en-US", {

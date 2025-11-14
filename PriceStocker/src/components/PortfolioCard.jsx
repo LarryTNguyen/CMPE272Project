@@ -41,7 +41,7 @@ const PortfolioCard = (props) => {
                     Quantity: <span className="text-gray-700 font-medium">{props.quantity}</span>
                 </div>
                 <div className="text-sm text-gray-500">
-                    Purchase Price: <span className="text-gray-700 font-medium">${props.price}</span>
+                    Average Price: <span className="text-gray-700 font-medium">${props.price}</span>
                 </div>
                 <div className="text-sm text-gray-500">
                     Current Price: <span className="text-gray-700 font-medium">${stock?.current_price?.toFixed(2) ?? "—"}</span>
@@ -49,6 +49,9 @@ const PortfolioCard = (props) => {
             </div>
 
             <div className="flex flex-col items-end gap-1">
+                <div className="text-lg font-bold text-gray-800">
+                  {stock?.name}
+                </div>
                 <div className={`text-sm font-semibold ${calculations.return >= 0 ? "text-green-600" : "text-red-600"}`}>
                     Return: ${calculations.return.toFixed(2)}
                 </div>
