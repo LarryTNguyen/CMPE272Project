@@ -1,23 +1,15 @@
-import { useEffect } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useUser } from '../features/authentication/useUser';
-import { useNavigate } from 'react-router-dom';
 
-const ProtectedRoute = ({ children }) => {
-  const navigate = useNavigate();
+const LOGIN_PATH = '/signin'; // <-- change if your login route is different
 
+export default function ProtectedRoute({ children }) {
+  const location = useLocation();
   const { isPending, isAuthenticated } = useUser();
 
-  useEffect(() => {
-    if (!isPending && !isAuthenticated) {
-      navigate('/signin');
-    }
-  }, [navigate, isPending, isAuthenticated]);
-
-  if (isPending) {
-    return <div>Loading...</div>;
+  if (isPending) return null; // or a tiny spinner
+  if (!isAuthenticated) {
+    return <Navigate to={LOGIN_PATH} replace state={{ from: location }} />;
   }
-
-  if (isAuthenticated) return children;
-};
-
-export default ProtectedRoute;
+  return children;
+}

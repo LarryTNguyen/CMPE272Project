@@ -9,7 +9,7 @@ const useSignIn = () => {
   const { mutate: signin, isLoading } = useMutation({
     mutationFn: signinAPI,
     onSuccess: () => {
-      alert('Sign In successful!');
+      // alert('Sign In successful!');
       navigate('/dashboard');
     },
   });
