@@ -11,6 +11,7 @@ import AppLayout from './pages/AppLayout';
 import ProtectedRoute from './pages/ProtectedRoute';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import Transactions from './pages/Transactions';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,6 +43,10 @@ const router = createBrowserRouter([
         path: '/dashboard',
         element: <Dashboard />,
       },
+      {
+        path: '/transactions',
+        element: <Transactions />,
+      }
     ],
   },
   {

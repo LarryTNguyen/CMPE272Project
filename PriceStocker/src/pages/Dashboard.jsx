@@ -6,6 +6,7 @@ import AddNew from "../components/AddNew";
 import AddAssetModal from "../components/AddAssetModal";
 import ActiveTradesCard from "../components/ActiveTradeCard";
 import MockLiveStockCard from "../components/MockLiveStockCard";
+import usePositions2 from '../hooks/usePositions2';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ const Dashboard = () => {
     setSymbols([s, ...symbols]);
     setInput("");
   };
+  const { data: trades, loading, error, refresh } = usePositions2();
   const handleSubmit = (payload) => {
     // Save order to your backend / local state
     console.log("Add asset payload:", payload);
@@ -44,7 +46,7 @@ const Dashboard = () => {
       <TotalProgress amount={totalPL} percent={totalPLPct} currency="USD" />
       </div>
       <div className="mt-6">
-        <ActiveTradesCard />
+        <ActiveTradesCard trades={trades} onClosed={refresh}/>
       </div>
 
       <div style={{ maxWidth: 1200, margin: "24px auto", padding: 16 }}>

@@ -1,6 +1,8 @@
 import React from "react";
 import { Card, CardContent } from "./ui/card";
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
+import CloseTradeButton from "./CloseTradeButton";
+
 
 // ---- helpers ----
 const quoteToFiat = { USDT: "USD", USDC: "USD", BUSD: "USD", EUR: "EUR", GBP: "GBP", JPY: "JPY" };
@@ -22,7 +24,7 @@ const Sparkline = ({ points }) => {
   );
 };
 
-function TradeRow({ t, index }) {
+function TradeRow({ t, index, onClosed }) {
   const base = t.base || (t.symbol ? t.symbol.replace(/USDT|USDC|BUSD|EUR|GBP|JPY$/, "") : "");
   const quote = t.quote || (t.symbol ? (t.symbol.match(/USDT|USDC|BUSD|EUR|GBP|JPY$/) || ["USDT"])[0] : "USDT");
   const quoteFiat = quoteToFiat[quote] || "USD";
@@ -71,8 +73,16 @@ function TradeRow({ t, index }) {
       </div>
 
       {/* Chart */}
-      <div className="col-span-2 justify-self-end" role="cell">
+      <div className="col-span-1 justify-self-end" role="cell">
         <Sparkline points={t.history || []} />
+      </div>
+      <div className="col-span-1 text-right" role="cell">
+        <CloseTradeButton
+          tradeId={t.id ?? t.position_id ?? t.trade_id}              // adjust to your field
+          defaultClosePrice={t.current}            // prefill with current price
+          disabled={t.status && t.status !== 'open'}
+          onClosed={onClosed}                      // tell parent to refresh
+        />
       </div>
     </div>
   );
@@ -108,7 +118,7 @@ const mock = [
   },
 ];
 
-export default function ActiveTradesCard({ trades = mock, title = "Active Trades", className = "" }) {
+export default function ActiveTradesCard({ trades = mock, title = "Active Trades", className = "", onClosed = () => {} }) {
   return (
     <Card className={`w-full overflow-x-auto border-border/60 ${className}`}>
       <CardContent className="p-0">
@@ -121,7 +131,8 @@ export default function ActiveTradesCard({ trades = mock, title = "Active Trades
           <div className="col-span-1">Qty</div>
           <div className="col-span-2">P/L (Amount)</div>
           <div className="col-span-1">P/L (%)</div>
-          <div className="col-span-2 justify-self-end">Trend</div>
+          <div className="col-span-1 justify-self-end">Trend</div>
+          <div className="col-span-1 text-right">Action</div>
         </div>
 
         <div className="divide-y" role="rowgroup">

@@ -1,0 +1,3 @@
+### list transactions
+GET https://<YOUR-PROJECT>.functions.supabase.co/transactions?user_id=3786bdb1-c9bc-4124-aee5-d249ebbd4dbc&limit=2
+x-ps-api-key: TEST_123

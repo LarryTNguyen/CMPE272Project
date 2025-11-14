@@ -7,8 +7,8 @@ function MockLiveStockCard({
   startPrice = 100,
   tickMs = 350,
   volatilityBps = 25,
-  tradesPanelHeight = 200,   // 👈 fixed-height trades panel (px)
-  maxTrades = 200,           // keep a rolling buffer
+  tradesPanelHeight = 200,   
+  maxTrades = 200,        
 }) {
   const containerRef = useRef(null);
   const chartApiRef = useRef(null);
