@@ -78,7 +78,7 @@ function LiveStockCard({
       if (error) throw error;
 
       console.log(`Deleted ${symbol} from watchlist`);
-      if (onDelete) onDelete(symbol); 
+      if (onDelete) onDelete(symbol);
     } catch (err) {
       console.error("Error deleting item:", err.message);
       alert("Failed to delete from watchlist");
@@ -130,14 +130,7 @@ function LiveStockCard({
         <strong>{String(symbol).toUpperCase()}</strong>
         <div style={{ fontVariantNumeric: "tabular-nums" }}>
           {price == null ? "—" : fmt.format(price)}
-
-          <span
-            style={{
-              marginLeft: 8,
-              fontSize: 12,
-              color: changePct >= 0 ? "#1fbf75" : "#e15241",
-            }}
-          >
+          <span className={`ml-2 text-xs ${changePct >= 0 ? "text-green-500" : "text-red-600"}`}>
             {price == null ? "" : ` ${(changePct >= 0 ? "+" : "")}${changePct.toFixed(2)}%`}
           </span>
         </div>
@@ -146,28 +139,10 @@ function LiveStockCard({
 
       {/* chart */}
       <div ref={containerRef} style={{ width: "100%", height }} />
-
-      <div
-        style={{
-          marginTop: 8,
-          border: "1px solid #1e232b",
-          borderRadius: 8,
-          background: "#0f1318",
-        }}
-      >
+      <div className="mt-2 border border-[#1e232b] rounded-lg bg-[#0f1318]">
         <strong>{data.name}</strong>
-
-
-
         <div
-          style={{
-            height: tradesPanelHeight,       
-            overflowY: "auto",               
-            overscrollBehavior: "contain",
-            padding: 8,
-            display: "grid",
-            gap: 6,
-          }}
+          className={`h-[${tradesPanelHeight}px] overflow-y-auto overscroll-contain p-2 grid gap-1.5`}
         >
           <h1>Open: {data.open_price}</h1>
           <h1>Previous Close: {data.previous_close}</h1>
@@ -178,17 +153,7 @@ function LiveStockCard({
       </div>
       <button
         onClick={handleDelete}
-        style={{
-          marginTop: 10,
-          width: "100%",
-          background: "#e15241",
-          color: "#fff",
-          border: "none",
-          borderRadius: 6,
-          padding: "8px 12px",
-          cursor: "pointer",
-          fontWeight: "bold",
-        }}
+        className="mt-2 w-full bg-red-600 text-white rounded-md py-2 px-3 font-bold hover:bg-red-700 transition-colors"
       >
         Delete from Watchlist
       </button>

@@ -5,6 +5,7 @@ import TotalAsset from "../components/TotalAsset";
 import AddNew from "../components/AddNew";
 import AddNewWatchlist from "../components/AddNewWatchlist";
 import AddWatchlist from "../components/AddWatchlist";
+import TotalCash from "../components/TotalCash";
 import AddAssetModal from "../components/AddAssetModal";
 import ActiveTradesCard from "../components/ActiveTradeCard";
 import LiveStockCard from "../components/LiveStockCard";
@@ -85,7 +86,7 @@ const Dashboard = () => {
     setSuggestions([]); // hide suggestions
   };
 
-  const fetchWatchlist = async () => {
+  const fetchWatchlist = async () => { // FETCH WATCH LIST FROM DATABASE TO DISPLAY
     const { data, error } = await supabase
       .from("watchlist")
       .select("ticker")
@@ -95,17 +96,15 @@ const Dashboard = () => {
       console.error("Error fetching watchlist:", error);
     } else {
       const tickers = data.map(row => row.ticker);
-      console.log("tickers", tickers)
       setSymbols(tickers);
     }
   };
   const handleWatchlistAdded = () => {
     fetchWatchlist(); // refresh after adding a new ticker
   };
-  useEffect(() => { // FETCH WATCH LIST FROM DATABASE TO DISPLAY
+  useEffect(() => {
     if (!user) return;
 
-    fetchWatchlist();
   }, [user]);
 
   return (
@@ -136,6 +135,7 @@ const Dashboard = () => {
 
       <div className="mt-6 flex gap-4">
         <TotalAsset amount={-25000} currency="USD" />
+        <TotalCash />
         <TotalProgress amount={totalPL} percent={totalPLPct} currency="USD" />
       </div>
       <div className="mt-6">

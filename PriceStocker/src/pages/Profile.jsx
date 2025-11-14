@@ -10,40 +10,39 @@ const Profile = () => {
     const [user, setUser] = useState(null);
     const [profile, setProfile] = useState(null)
     const navigate = useNavigate();
-
     useEffect(() => {
-        const fetchUser = async () => {
-            const { data: { user }, error } = await supabase.auth.getUser();
-            if (error) {
-                console.error('Error fetching user:', error);
-            } else if (user) {
+        const fetchUserAndProfile = async () => {
+            try {
+                const { data: { user }, error: userError } = await supabase.auth.getUser();
+                if (userError) throw userError;
+                if (!user) {
+                    console.log('No user logged in, redirecting...');
+                    return;
+                }
+
                 setUser(user);
-            } else {
-                console.log('No user logged in, redirecting...');
+
+                const { data: profileData, error: profileError } = await supabase
+                    .from("profiles")
+                    .select("*")
+                    .eq("id", user.id)
+                    .single();
+
+                if (profileError) throw profileError;
+
+                if (profileData.username !== username) {
+                    navigate("/dashboard");
+                    return;
+                }
+
+                setProfile(profileData);
+            } catch (error) {
+                console.error("Error fetching user/profile:", error);
             }
         };
-        fetchUser();
+
+        fetchUserAndProfile();
     }, []);
-
-    useEffect(() => {
-        if (!user) return;
-        const fetchProfile = async () => {
-            const { data, error } = await supabase
-                .from("profiles")
-                .select("*")
-                .eq("id", user.id)
-                .single();
-            if (error) {
-                console.error("Error fetching profile:", error);
-            } else {
-                if (data.username != username)
-                    navigate("/dashboard")
-                setProfile(data)
-            }
-        };
-
-        fetchProfile();
-    }, [user]);
 
     const handleLogout = async () => {
         const { error } = await supabase.auth.signOut();
@@ -54,25 +53,25 @@ const Profile = () => {
         }
     };
     const handleDeposit = async () => {
-        const newCash= profile.cash +1000
-            const { error: dbError } = await supabase
-                .from("profiles")
-                .update({ cash: (profile.cash+100) })
-                .eq("id", user.id);
-            if (dbError) throw dbError;
-    setProfile((prev) => ({ ...prev, cash: newCash }));
+        const newCash = profile.cash + 1000
+        const { error: dbError } = await supabase
+            .from("profiles")
+            .update({ cash: (newCash) })
+            .eq("id", user.id);
+        if (dbError) throw dbError;
+        setProfile((prev) => ({ ...prev, cash: newCash }));
 
 
 
     };
     const handleWithdrawal = async () => {
         const newCash = 0
-            const { error: dbError } = await supabase
-                .from("profiles")
-                .update({ cash: 0 })
-                .eq("id", user.id);
-            if (dbError) throw dbError;
-    setProfile((prev) => ({ ...prev, cash: newCash }));
+        const { error: dbError } = await supabase
+            .from("profiles")
+            .update({ cash: 0 })
+            .eq("id", user.id);
+        if (dbError) throw dbError;
+        setProfile((prev) => ({ ...prev, cash: newCash }));
 
 
     };
@@ -196,7 +195,7 @@ const Profile = () => {
                                     </button>
                                 </div>
                                 <div className="mt-8 pt-6 border-t border-gray-700">
- 
+
 
                                     <button
                                         onClick={handleLogout}
