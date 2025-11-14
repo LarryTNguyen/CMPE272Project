@@ -1,7 +1,7 @@
-import React from 'react';
-import TrendingMarkets from '../components/FlashStock';
+import React,{useEffect} from 'react';
+import TrendingMarkets from '../components/TrendingMarkets';
 import NewsSection from '../components/NewsSection';
-const Home = () => {
+const Home = () => {  
   return (
     <main className="p-6 space-y-6">
       <section>
