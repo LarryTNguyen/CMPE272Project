@@ -1,6 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
-export const supabaseUrl = 'https://jaaktefezeddygeiqstr.supabase.co';
-const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+const url = import.meta.env.VITE_SUPABASE_URL
+const key = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-export default supabase;
+if (!url || !key) {
+  throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY')
+}
+
+export const supabase = createClient(url, key)
