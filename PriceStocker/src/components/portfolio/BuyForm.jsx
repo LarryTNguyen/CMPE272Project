@@ -1,5 +1,5 @@
 import { useForm } from 'react-hook-form';
-import usePlaceOrder from '../features/portfolio/usePlaceOrder';
+import usePlaceBuyOrder from '../../hooks/portfolio/usePlaceBuyOrder';
 const OrderForm = () => {
   const {
     register,
@@ -7,10 +7,10 @@ const OrderForm = () => {
     // formState: { error },
   } = useForm();
 
-  const { placeOrder } = usePlaceOrder();
+  const { placeBuyOrder } = usePlaceBuyOrder();
 
   const onSubmit = ({ ticker, quantity, limitPrice }) => {
-    placeOrder({ ticker, quantity, limitPrice });
+    placeBuyOrder({ ticker, quantity, limitPrice });
   };
 
   const { onChange: onTickerChange, ...tickerRegister } = register('ticker', {
@@ -56,7 +56,7 @@ const OrderForm = () => {
         />
       </div>
       <button type="submit" className="rounded bg-blue-300 p-2">
-        Place Order
+        Send Order
       </button>
     </form>
   );

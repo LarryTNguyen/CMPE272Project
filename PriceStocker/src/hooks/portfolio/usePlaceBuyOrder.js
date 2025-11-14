@@ -1,11 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { placeOrder as placeOrderAPI } from '../../services/apiStock';
+import { placeBuyOrder as placeBuyOrderAPI } from '../../services/apiStock';
 
-const usePlaceOrder = () => {
+const usePlaceBuyOrder = () => {
   const queryClient = useQueryClient();
 
-  const { mutate: placeOrder, isPending: isProcessingOrder } = useMutation({
-    mutationFn: placeOrderAPI,
+  const { mutate: placeBuyOrder, isPending: isProcessingOrder } = useMutation({
+    mutationFn: placeBuyOrderAPI,
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['positions'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
@@ -19,7 +19,7 @@ const usePlaceOrder = () => {
     },
   });
 
-  return { placeOrder, isProcessingOrder };
+  return { placeBuyOrder, isProcessingOrder };
 };
 
-export default usePlaceOrder;
+export default usePlaceBuyOrder;

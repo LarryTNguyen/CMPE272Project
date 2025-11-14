@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import useSignUp from '../features/authentication/useSignUp';
+import useSignUp from '../hooks/authentication/useSignUp';
 
 const Signup = () => {
   const { signup } = useSignUp();

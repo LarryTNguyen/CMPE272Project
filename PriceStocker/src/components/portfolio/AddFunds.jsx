@@ -1,5 +1,5 @@
 import { useForm } from 'react-hook-form';
-import useAddFunds from '../features/portfolio/useAddFunds';
+import useAddFunds from '../../hooks/portfolio/useAddFunds';
 
 const AddFunds = () => {
   const { register, handleSubmit } = useForm();

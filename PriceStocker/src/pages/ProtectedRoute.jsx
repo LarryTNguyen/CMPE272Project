@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useUser } from '../features/authentication/useUser';
+import { useUser } from '../hooks/authentication/useUser';
 import { useNavigate } from 'react-router-dom';
 
 const ProtectedRoute = ({ children }) => {
