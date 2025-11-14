@@ -12,9 +12,9 @@ const Positions = () => {
   }, [positions, isFetching]);
 
   return (
-    <div className="m-2 flex-col rounded-lg border-1">
+    <div className="m-2 flex-col rounded-lg border">
       <h2 className="px-2 py-1 text-lg font-semibold">Current Positions</h2>
-      <div className="mt-2 grid grid-cols-[10rem_8rem_11rem_11rem_11rem_11rem_11rem_12rem_10rem] items-center text-center">
+      <div className="mt-2 grid grid-cols-[10rem_8rem_11rem_11rem_11rem_11rem_11rem_12rem_10rem] items-center text-center font-semibold">
         <div>Ticker</div>
         <div>Quantity</div>
         <div>Average Price</div>
