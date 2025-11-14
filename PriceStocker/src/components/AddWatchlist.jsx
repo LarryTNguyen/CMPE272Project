@@ -57,7 +57,6 @@ export default function AddWatchlist({
       if (error) {
         console.error('Error', error);
       } else if (user) {
-        console.log('logged in : ', user);
         setUser(user);
       } else {
         console.log('No user logged in');
