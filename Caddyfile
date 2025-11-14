@@ -1,12 +1,10 @@
 {
     admin off
     persist_config off
+    auto_https off
 }
 
 :{$PORT} {
-    # Railway terminates TLS; serve plain HTTP in-container
-    auto_https off
-
     root * dist
     encode gzip
     file_server
