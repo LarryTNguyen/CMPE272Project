@@ -1,3 +1,4 @@
+// src/components/Navbar.jsx
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import supabase from '../services/superbase';
@@ -44,13 +45,22 @@ const Navbar = () => {
         >
           Dashboard
         </Link>
-          
-          <Link
+        <Link
           to="/portfolio"
           className="px-3 py-2 rounded-lg text-gray-200 font-medium transition-all duration-200 hover:text-white hover:bg-gray-800/70 active:scale-95"
         >
           Portfolio
         </Link>
+
+        {/* NEW: Transactions link (only when logged in) */}
+        {user && (
+          <Link
+            to="/transactions"
+            className="px-3 py-2 rounded-lg text-gray-200 font-medium transition-all duration-200 hover:text-white hover:bg-gray-800/70 active:scale-95"
+          >
+            Transactions
+          </Link>
+        )}
       </div>
 
       <div className="flex items-center gap-3">
