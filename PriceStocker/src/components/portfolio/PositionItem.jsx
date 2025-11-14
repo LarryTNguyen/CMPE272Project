@@ -32,7 +32,7 @@ const PositionItem = ({
                 : ''
           }
         >
-          ${dollar_change}
+          ${Math.abs(dollar_change)}
         </div>
         <div
           className={
