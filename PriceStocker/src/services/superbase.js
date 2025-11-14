@@ -5,5 +5,5 @@ const key = import.meta.env.VITE_SUPABASE_ANON_KEY
 if (!url || !key) {
   throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY')
 }
-
-export const supabase = createClient(url, key)
+const supabase = createClient(url, key)
+export default supabase;
