@@ -133,8 +133,3 @@ export default function ActiveTradesCard({ trades = mock, title = "Active Trades
     </Card>
   );
 }
-
-// --- Usage example (Home.jsx) ---
-// import ActiveTradesCard from "@/components/ActiveTradesCard";
-// <ActiveTradesCard />
-// or pass your own data: <ActiveTradesCard trades={yourTradesArray} />
