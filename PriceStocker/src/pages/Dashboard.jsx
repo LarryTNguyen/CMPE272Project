@@ -148,6 +148,8 @@ const Dashboard = () => {
 
   return (
     <main className="p-6">
+      <div style={{ maxWidth: 1200, margin: "24px auto", padding: 16 }}>
+
       <h1 className="text-2xl font-semibold mb-4">Dashboard</h1>
       <div className="flex justify-left gap-4">
         <AddNew onClick={() => setOpen(true)} />
@@ -180,9 +182,9 @@ const Dashboard = () => {
       <div className="mt-6">
         <ActiveTradesCard />
       </div>
-
+</div>
       <div style={{ maxWidth: 1200, margin: "24px auto", padding: 16 }}>
-        <h1 style={{ margin: "0 0 16px" }}>Watchlist Stocks</h1>
+      <h1 className="text-2xl font-semibold mb-4">Watch List</h1>
         <div
           style={{
             position: "relative",

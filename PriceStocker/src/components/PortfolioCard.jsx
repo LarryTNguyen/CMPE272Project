@@ -33,7 +33,8 @@ const PortfolioCard = (props) => {
         fetchStock();
     }, [props.ticker, props.price, props.quantity]);
     return (
-        <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition duration-200 flex justify-between items-center w-full max-w-2xl mx-auto">
+
+        <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition duration-200 flex justify-between items-center w-full max-w-5xl mx-auto">
 
             <div className="flex flex-col gap-1">
                 <div className="text-2xl font-bold tracking-wide text-gray-800">{props.ticker}</div>
@@ -61,7 +62,7 @@ const PortfolioCard = (props) => {
                 <div className="text-lg font-bold text-gray-800">
                     Market Value: ${calculations.marketValue.toFixed(2)}
                 </div>
-            </div>
+        </div>
         </div>
     )
 

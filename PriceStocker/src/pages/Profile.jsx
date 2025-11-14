@@ -120,105 +120,99 @@ const Profile = () => {
     return (
         <>
             <Navbar />
-            <div className="min-h-screen bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-                <div className="max-w-xl mx-auto">
-                    <div className="bg-gray-800 rounded-3xl shadow-2xl p-8 sm:p-10 border border-gray-700">
+<div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+  <div className="max-w-xl mx-auto">
+    <div className="bg-white rounded-2xl border border-gray-200 p-8 sm:p-10">
 
-                        <header className="text-center mb-10">
-                            <h2 className="text-3xl font-extrabold text-white flex items-center justify-center">
-                                <User className="w-8 h-8 mr-2 text-green-400" />
-                                Your Profile
-                            </h2>
-                            <p className="text-gray-400 mt-2">Manage your account and view your balance.</p>
-                        </header>
+      <header className="text-center mb-8">
+        <h2 className="text-3xl font-extrabold text-gray-900 flex items-center justify-center">
+          <User className="w-8 h-8 mr-2 text-blue-500" />
+          Your Profile
+        </h2>
+        <p className="text-gray-500 mt-2">Manage your account and view your balance.</p>
+      </header>
 
+      {profile ? (
+        <>
+          <div className="flex items-center space-x-4 bg-gray-50 rounded-xl p-6 mb-6">
+            <div className="relative w-16 h-16 rounded-full overflow-hidden bg-blue-200 flex items-center justify-center">
+              {/* Avatar Image */}
+              <img
+                src={profile.avatar_url || ''}
+                alt="Avatar"
+                className={`w-full h-full object-cover ${!profile.avatar_url ? 'hidden' : ''}`}
+              />
+              {!profile.avatar_url && (
+                <span className="text-gray-500 text-2xl font-bold">
+                  {profile.full_name?.charAt(0).toUpperCase() || <User className="w-8 h-8" />}
+                </span>
+              )}
 
-                        {profile ? (
-                            <>
-                                <div className="bg-gray-700 rounded-2xl p-6 mb-8 shadow-inner">
-                                    <div className="flex items-center space-x-4">
-                                        <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-3xl font-bold text-gray-900 ring-4 ring-green-400/50">
-
-
-
-                                            <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-3xl font-bold text-gray-900 ring-4 ring-green-400/50 overflow-hidden">
-                                                <label className="cursor-pointer w-full h-full flex items-center justify-center">
-                                                    {profile.avatar_url ? (
-                                                        <img
-                                                            src={profile.avatar_url}
-                                                            alt="Avatar"
-                                                            className="w-full h-full object-cover"
-                                                        />
-                                                    ) : (
-                                                        profile.full_name?.charAt(0).toUpperCase() || <User className="w-8 h-8" />
-                                                    )}
-                                                    <input
-                                                        type="file"
-                                                        accept="image/*"
-                                                        className="hidden"
-                                                        onChange={handlePFP}
-                                                    />
-                                                </label>
-                                            </div>
-
-
-
-                                        </div>
-                                        <div>
-                                            <h1 className="text-2xl font-bold text-white leading-none">{profile.full_name || 'User Name'}</h1>
-                                            <p className="text-green-400 text-lg font-medium mt-1">@{username}</p>
-                                            <p className="text-sm text-gray-400">{user.email}</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="bg-gradient-to-br from-green-500 to-teal-600 rounded-2xl p-6 text-center shadow-lg transform transition-transform duration-300 hover:scale-[1.01] hover:shadow-green-500/30 mb-8">
-                                    <h2 className="text-sm uppercase text-white font-semibold tracking-widest flex items-center justify-center mb-2">
-                                        <DollarSign className="w-5 h-5 mr-1" />
-                                        Account Balance
-                                    </h2>
-                                    <p className="text-5xl font-extrabold text-white mt-2">
-                                        {formatCash(profile.cash)}
-                                    </p>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <button className="flex items-center justify-center space-x-2 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg shadow-green-500/30"
-                                        onClick={handleDeposit}>
-                                        <Zap className="w-5 h-5" />
-                                        <span>Deposit</span>
-                                    </button>
-                                    <button className="flex items-center justify-center space-x-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg shadow-gray-500/30"
-                                        onClick={handleWithdrawal}>
-                                        <DollarSign className="w-5 h-5" />
-                                        <span>Withdraw</span>
-                                    </button>
-                                </div>
-                                <div className="mt-8 pt-6 border-t border-gray-700">
-
-
-                                    <button
-                                        onClick={handleLogout}
-                                        className="w-full flex items-center justify-center space-x-2 bg-transparent border border-red-500 text-red-400 hover:bg-red-900/50 font-medium py-3 rounded-xl transition-all duration-300"
-                                    >
-                                        <LogOut className="w-5 h-5" />
-                                        <span>Sign Out</span>
-                                    </button>
-                                </div>
-
-                            </>
-                        ) : (
-                            <div className="text-center p-10">
-                                <p className="text-gray-400 text-xl flex items-center justify-center">
-                                    <Zap className="w-6 h-6 mr-2 animate-pulse text-green-400" />
-                                    Loading profile data...
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                </div>
+              {/* Upload overlay */}
+              <label className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 cursor-pointer transition">
+                <span className="text-white text-xl font-bold">+</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handlePFP}
+                />
+              </label>
             </div>
 
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">{profile.full_name || 'User Name'}</h1>
+              <p className="text-blue-500 text-lg font-medium mt-1">@{username}</p>
+              <p className="text-gray-500 text-sm">{user.email}</p>
+            </div>
+          </div>
+
+          <div className="bg-blue-500/80 text-white rounded-xl p-6 text-center mb-6">
+            <h2 className="text-sm uppercase font-semibold tracking-widest flex items-center justify-center mb-2">
+              <DollarSign className="w-5 h-5 mr-1" />
+              Account Balance
+            </h2>
+            <p className="text-4xl font-extrabold mt-2">{formatCash(profile.cash)}</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              className="flex items-center justify-center space-x-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition"
+              onClick={handleDeposit}
+            >
+              <Zap className="w-5 h-5" />
+              <span>Deposit</span>
+            </button>
+            <button
+              className="flex items-center justify-center space-x-2 bg-gray-200 hover:bg-gray-300 text-gray-900 font-semibold py-3 px-4 rounded-lg transition"
+              onClick={handleWithdrawal}
+            >
+              <DollarSign className="w-5 h-5" />
+              <span>Withdraw</span>
+            </button>
+          </div>
+
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center space-x-2 border border-red-400 text-red-500 hover:bg-red-50 font-medium py-3 rounded-lg transition"
+            >
+              <LogOut className="w-5 h-5" />
+              <span>Sign Out</span>
+            </button>
+          </div>
+        </>
+      ) : (
+        <div className="text-center p-10">
+          <p className="text-gray-500 text-xl flex items-center justify-center">
+            <Zap className="w-6 h-6 mr-2 animate-pulse text-blue-400" />
+            Loading profile data...
+          </p>
+        </div>
+      )}
+    </div>
+  </div>
+</div>
         </>
     );
 
