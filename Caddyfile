@@ -1,12 +1,19 @@
 {
-  admin off
-  persist_config off
-  auto_https off
-  log { format json }
+    admin off
+    persist_config off
 }
-:{$PORT:3000} {
-  root * dist
-  encode gzip
-  file_server
-  try_files {path} /index.html
+
+:{$PORT} {
+    # Railway terminates TLS; serve plain HTTP in-container
+    auto_https off
+
+    root * dist
+    encode gzip
+    file_server
+    try_files {path} /index.html
+
+    log {
+        output stdout
+        format json
+    }
 }
