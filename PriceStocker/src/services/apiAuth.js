@@ -24,6 +24,7 @@ export const signin = async ({ email, password }) => {
   });
 
   if (error) throw new Error(error.message);
+  
   return data;
 };
 
