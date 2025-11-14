@@ -11,6 +11,7 @@ const SellForm = ({ onClose }) => {
 
   const onSubmit = ({ ticker, quantity, limitPrice }) => {
     placeSellOrder({ ticker, quantity, limitPrice });
+    onClose();
   };
 
   const { onChange: onTickerChange, ...tickerRegister } = register('ticker', {
@@ -28,7 +29,7 @@ const SellForm = ({ onClose }) => {
         <label>Stock Ticker</label>
         <input
           type="text"
-          className="m-3 rounded-lg border-1 p-1"
+          className="m-3 rounded-lg border p-1"
           {...tickerRegister}
           onChange={(e) => {
             e.target.value = e.target.value.toUpperCase();
@@ -40,7 +41,7 @@ const SellForm = ({ onClose }) => {
         <label>Quantity</label>
         <input
           type="number"
-          className="m-3 rounded-lg border-1 p-1"
+          className="m-3 rounded-lg border p-1"
           {...register('quantity', {
             required: true,
             min: 1,
@@ -52,7 +53,7 @@ const SellForm = ({ onClose }) => {
         <label>Limit Price</label>
         <input
           type="number"
-          className="m-3 rounded-lg border-1 p-1"
+          className="m-3 rounded-lg border p-1"
           {...register('limitPrice', {
             required: true,
             min: 1,
@@ -63,7 +64,6 @@ const SellForm = ({ onClose }) => {
         <button
           type="submit"
           className="rounded-lg bg-blue-400 p-2 text-sm transition-all duration-400 hover:bg-blue-600"
-          onClick={onClose}
         >
           Send Order
         </button>
