@@ -142,7 +142,6 @@ function LiveStockCard({
 
       </div>
 
-      {/* chart */}
       <div ref={containerRef} style={{ width: "100%", height }} />
       <div className="mt-2 border border-[#1e232b] rounded-lg bg-[#0f1318]">
         <strong>{data.name}</strong>

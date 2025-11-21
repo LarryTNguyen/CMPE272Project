@@ -12,6 +12,7 @@ import InputBid from './pages/InputBid';
 import ProtectedRoute from './pages/ProtectedRoute';
 import Profile from './pages/Profile'
 import Portfolio from './pages/Portfolio'
+import Stock from './pages/Stock'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import Transactions from './pages/Transactions';
@@ -72,7 +73,10 @@ const router = createBrowserRouter([
     path: '/portfolio',
     element: <Portfolio/>,
   },
-  
+  {
+    path: '/stock/:ticker',
+    element: <Stock />,
+  },
 ]);
 
 const App = () => {
