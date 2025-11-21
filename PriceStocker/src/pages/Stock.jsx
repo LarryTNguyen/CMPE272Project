@@ -24,7 +24,8 @@ const Stock = () => {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
   const [sharesOwned, setSharesOwned] = useState(0);
-const handleTrade = async () => {
+  const [stock, setStock] = useState({})
+  const handleTrade = async () => {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError) throw userError;
     if (!user) return console.log("No user logged in");
@@ -33,116 +34,116 @@ const handleTrade = async () => {
     const cashModification = actionType === 'buy' ? -costOrGain : costOrGain;
     const newCash = profile.cash + cashModification;
 
-    let newOwnedQuantity = sharesOwned; 
+    let newOwnedQuantity = sharesOwned;
 
     try {
-        const { data: existingPositions, error: fetchError } = await supabase
+      const { data: existingPositions, error: fetchError } = await supabase
+        .from('positions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('ticker', ticker)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+
+      const quantityForValidation = existingPositions?.quantity ?? 0;
+
+      if (actionType === 'buy') {
+        if (costOrGain > profile.cash) {
+          throw new Error("INSUFFICIENT FUNDS: You do not have enough cash to complete this purchase.");
+        }
+      } else {
+        if (quantityForValidation < tradeAmount) {
+          throw new Error(`INSUFFICIENT SHARES: You only own ${quantityForValidation} shares of ${ticker}.`);
+        }
+      }
+
+      let positionOperationPromise;
+      const existingPosition = existingPositions;
+
+      if (actionType === 'buy') {
+        newOwnedQuantity = quantityForValidation + tradeAmount;
+        if (existingPosition) {
+          const newTotalCost = (existingPosition.quantity * existingPosition.average_price) + costOrGain;
+          const newAveragePrice = newTotalCost / newOwnedQuantity;
+
+          positionOperationPromise = supabase
             .from('positions')
-            .select('*')
-            .eq('user_id', user.id)
-            .eq('ticker', ticker)
-            .maybeSingle();
-
-        if (fetchError) throw fetchError;
-
-        const quantityForValidation = existingPositions?.quantity ?? 0;
-        
-        if (actionType === 'buy') {
-            if (costOrGain > profile.cash) {
-                throw new Error("INSUFFICIENT FUNDS: You do not have enough cash to complete this purchase.");
-            }
-        } else {
-            if (quantityForValidation < tradeAmount) {
-                throw new Error(`INSUFFICIENT SHARES: You only own ${quantityForValidation} shares of ${ticker}.`);
-            }
-        }
-
-        let positionOperationPromise;
-        const existingPosition = existingPositions;
-
-        if (actionType === 'buy') {
-            newOwnedQuantity = quantityForValidation + tradeAmount; 
-            if (existingPosition) {
-                const newTotalCost = (existingPosition.quantity * existingPosition.average_price) + costOrGain;
-                const newAveragePrice = newTotalCost / newOwnedQuantity;
-
-                positionOperationPromise = supabase
-                    .from('positions')
-                    .update({
-                        quantity: newOwnedQuantity,
-                        average_price: newAveragePrice,
-                    })
-                    .eq('user_id', user.id)
-                    .eq('ticker', ticker);
-
-            } else {
-                positionOperationPromise = supabase
-                    .from('positions')
-                    .insert([{
-                        user_id: user.id,
-                        ticker: ticker,
-                        quantity: tradeAmount,
-                        average_price: current.current_price,
-                    }]);
-            }
-        } else { 
-            newOwnedQuantity = quantityForValidation - tradeAmount;
-
-            if (newOwnedQuantity === 0) {
-                positionOperationPromise = supabase
-                    .from('positions')
-                    .delete()
-                    .eq('user_id', user.id)
-                    .eq('ticker', ticker);
-            } else {
-                positionOperationPromise = supabase
-                    .from('positions')
-                    .update({
-                        quantity: newOwnedQuantity
-                    })
-                    .eq('user_id', user.id)
-                    .eq('ticker', ticker);
-            }
-        }
-
-        const { error: positionError } = await positionOperationPromise;
-        if (positionError) throw positionError;
-        const { error: profileUpdateError } = await supabase
-            .from('profiles')
             .update({
-                cash: newCash
+              quantity: newOwnedQuantity,
+              average_price: newAveragePrice,
             })
-            .eq('id', user.id);
+            .eq('user_id', user.id)
+            .eq('ticker', ticker);
 
-        if (profileUpdateError) throw profileUpdateError;
+        } else {
+          positionOperationPromise = supabase
+            .from('positions')
+            .insert([{
+              user_id: user.id,
+              ticker: ticker,
+              quantity: tradeAmount,
+              average_price: current.current_price,
+            }]);
+        }
+      } else {
+        newOwnedQuantity = quantityForValidation - tradeAmount;
 
-        setProfile((prev) => ({
-            ...prev,
-            cash: newCash,
-        }));
+        if (newOwnedQuantity === 0) {
+          positionOperationPromise = supabase
+            .from('positions')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('ticker', ticker);
+        } else {
+          positionOperationPromise = supabase
+            .from('positions')
+            .update({
+              quantity: newOwnedQuantity
+            })
+            .eq('user_id', user.id)
+            .eq('ticker', ticker);
+        }
+      }
 
-        const { error: transactionInsertError } = await supabase
-            .from('transactions')
-            .insert([
-                {
-                    ticker,
-                    type: actionType,
-                    quantity: tradeAmount,
-                    price: current.current_price,
-                    user_id: user.id
-                }
-            ]);
+      const { error: positionError } = await positionOperationPromise;
+      if (positionError) throw positionError;
+      const { error: profileUpdateError } = await supabase
+        .from('profiles')
+        .update({
+          cash: newCash
+        })
+        .eq('id', user.id);
 
-        if (transactionInsertError) throw transactionInsertError;
+      if (profileUpdateError) throw profileUpdateError;
 
-        setSharesOwned(newOwnedQuantity);
-        alert(`${actionType === 'buy' ? 'Bought' : 'Sold'} ${tradeAmount} shares!`);
+      setProfile((prev) => ({
+        ...prev,
+        cash: newCash,
+      }));
+
+      const { error: transactionInsertError } = await supabase
+        .from('transactions')
+        .insert([
+          {
+            ticker,
+            type: actionType,
+            quantity: tradeAmount,
+            price: current.current_price,
+            user_id: user.id
+          }
+        ]);
+
+      if (transactionInsertError) throw transactionInsertError;
+
+      setSharesOwned(newOwnedQuantity);
+      alert(`${actionType === 'buy' ? 'Bought' : 'Sold'} ${tradeAmount} shares!`);
 
     } catch (err) {
-        console.error(`Transaction failed during ${actionType}:`, err.message || err);
-        alert(`Transaction failed: ${err.message || 'Check console for details.'}`);
+      console.error(`Transaction failed during ${actionType}:`, err.message || err);
+      alert(`Transaction failed: ${err.message || 'Check console for details.'}`);
     }
-}
+  }
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -165,7 +166,21 @@ const handleTrade = async () => {
       }
     };
 
+
+    const fetchStock = async () => {
+      const { data, error } = await supabase
+        .from("stock_data")
+        .select("*")
+        .eq("ticker", ticker)
+        .single();
+
+      setStock(data)
+      console.log(data)
+    }
+
+
     fetchProfile();
+    fetchStock();
   }, []);
 
   async function loadCurrent() {
@@ -191,7 +206,7 @@ const handleTrade = async () => {
     ]);
   }
   async function fetchShares() {
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError) throw userError;
     if (!user) return console.log("No user logged in");
     const { data, error } = await supabase
@@ -205,7 +220,7 @@ const handleTrade = async () => {
       console.error("Shares quantity error:", error);
       return;
     }
-    console.log("shares",data)
+    console.log("shares", data)
     setSharesOwned(data.quantity);
   }
   useEffect(() => {
@@ -243,72 +258,67 @@ const handleTrade = async () => {
       <Navbar />
 
       <div className="max-w-7xl mx-auto mt-10 px-6">
+        <div className="flex gap-6">
+          <div className="w-[70%] p-6 bg-white rounded-2xl shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <h2 className="text-xl font-bold">{ticker} Stock Price</h2>
+              {isUp ? (
+                <ArrowUp className="text-green-500" />
+              ) : (
+                <ArrowDown className="text-red-500" />
+              )}
+            </div>
 
+            <div className="text-lg font-medium mb-2">
+              Current Price: ${current.current_price.toFixed(2)}
+            </div>
+            <div >
 
-        <div className="flex gap-6">      <div className="w-[70%] p-6 bg-white rounded-2xl shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <h2 className="text-xl font-bold">{ticker} Stock Price</h2>
-            {isUp ? (
-              <ArrowUp className="text-green-500" />
-            ) : (
-              <ArrowDown className="text-red-500" />
-            )}
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart
+                  data={history}
+                  margin={{ top: 20, right: 30, left: 0, bottom: 10 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+
+                  <XAxis
+                    dataKey="timestamp"
+                    tick={{ fontSize: 12 }}
+                    interval="preserveEnd"
+                    minTickGap={20}
+                  />
+
+                  <YAxis
+                    domain={['dataMin - 1', 'dataMax + 1']}
+                    tick={{ fontSize: 12 }}
+                    allowDecimals={true}
+                    width={60}
+                  />
+
+                  <Tooltip
+                    formatter={(value) => `$${value.toFixed(2)}`}
+                    labelStyle={{ fontWeight: "bold" }}
+                  />
+
+                  <Line
+                    type="monotone"
+                    dataKey="price"
+                    stroke="#0EA5E9"       // nice blue stock-chart color
+                    strokeWidth={2}
+                    dot={false}            // stock charts don’t show dots
+                    activeDot={{ r: 4 }}
+                    animationDuration={300}
+                    isAnimationActive={false} // smoother between updates
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+
+            </div>
           </div>
-
-          <div className="text-lg font-medium mb-2">
-            Current Price: ${current.current_price.toFixed(2)}
-          </div>
-          <div >
-
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart
-                data={history}
-                margin={{ top: 20, right: 30, left: 0, bottom: 10 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-
-                <XAxis
-                  dataKey="timestamp"
-                  tick={{ fontSize: 12 }}
-                  interval="preserveEnd"
-                  minTickGap={20}
-                />
-
-                <YAxis
-                  domain={['dataMin - 1', 'dataMax + 1']}
-                  tick={{ fontSize: 12 }}
-                  allowDecimals={true}
-                  width={60}
-                />
-
-                <Tooltip
-                  formatter={(value) => `$${value.toFixed(2)}`}
-                  labelStyle={{ fontWeight: "bold" }}
-                />
-
-                <Line
-                  type="monotone"
-                  dataKey="price"
-                  stroke="#0EA5E9"       // nice blue stock-chart color
-                  strokeWidth={2}
-                  dot={false}            // stock charts don’t show dots
-                  activeDot={{ r: 4 }}
-                  animationDuration={300}
-                  isAnimationActive={false} // smoother between updates
-                />
-              </LineChart>
-            </ResponsiveContainer>
-
-          </div>
-
-        </div>
           <div className="w-[30%] p-6 bg-white rounded-2xl shadow-sm">
-
-
             <p className="text-gray-600 mb-2">
               <span className="font-semibold">Ticker:</span> {ticker.toUpperCase()}
             </p>
-
             <p className="text-gray-600 mb-2">
               <span className="font-semibold">Name: </span>
               {current.name}
@@ -317,9 +327,8 @@ const handleTrade = async () => {
               <span className="font-semibold">Buying Power:</span> $
               {profile?.cash?.toFixed(2) ?? "0.00"}            </p>
             <p className="text-gray-600 mb-2">
-              <span className="font-semibold">Shares Owned:</span> 
+              <span className="font-semibold">Shares Owned:</span>
               {sharesOwned}            </p>
-
             <div className="flex gap-2 mb-3">
               <button
                 className={`flex-1 py-2 rounded-lg font-semibold ${actionType === "buy"
@@ -340,8 +349,6 @@ const handleTrade = async () => {
                 Sell
               </button>
             </div>
-
-
             <div className="flex flex-col gap-2">
               <input
                 type="number"
@@ -365,7 +372,37 @@ const handleTrade = async () => {
 
           </div>
         </div>
-
+        <div className="w-[100%] p-6 bg-white rounded-2xl shadow-sm mt-6">
+          <h3 className="text-lg font-bold mb-4">Market Data</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-gray-600 text-sm">Open</p>
+              <p className="font-semibold text-lg">${current.open_price.toFixed(2)}</p>
+            </div>
+            <div>
+              <p className="text-gray-600 text-sm">Previous Close</p>
+              <p className="font-semibold text-lg">${current.previous_close.toFixed(2)}</p>
+            </div>
+            <div>
+              <p className="text-gray-600 text-sm">Day High</p>
+              <p className="font-semibold text-lg">${current.high_price.toFixed(2)}</p>
+            </div>
+            <div>
+              <p className="text-gray-600 text-sm">Day Low</p>
+              <p className="font-semibold text-lg">${current.low_price.toFixed(2)}</p>
+            </div>
+            <div>
+              <p className="text-gray-600 text-sm">Change</p>
+              <p className={`font-semibold text-lg ${current.percent_change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                {current.percent_change >= 0 ? '+' : ''}{current.percent_change.toFixed(2)}%
+              </p>
+            </div>
+            <div>
+              <p className="text-gray-600 text-sm">Last Updated</p>
+              <p className="font-semibold text-sm">{new Date(current.last_updated).toLocaleString()}</p>
+            </div>
+          </div>
+        </div>
       </div>
     </>
   );
