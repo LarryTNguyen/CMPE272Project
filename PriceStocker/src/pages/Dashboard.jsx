@@ -14,7 +14,7 @@ import supabase from "../services/superbase";
 import usePositions2 from "../hooks/usePositions2";
 
 const CACHE_KEY = "home_summary_v1";
-const MAX_AGE_MS = 60_000; // 60s considered fresh
+const MAX_AGE_MS = 60_000;
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -25,7 +25,7 @@ export default function Dashboard() {
       const raw = localStorage.getItem(CACHE_KEY);
       if (!raw) return null;
       const cached = JSON.parse(raw);
-      return cached?.data ?? null; // show instantly
+      return cached?.data ?? null;
     } catch {
       return null;
     }
@@ -40,7 +40,6 @@ export default function Dashboard() {
   const [suggestions, setSuggestions] = useState([]);
   const TICKERS = tickersData.map((item) => item.ticker);
 
-  // 1) Get session once + subscribe (no polling, no retries)
   useEffect(() => {
     let mounted = true;
 
@@ -58,7 +57,6 @@ export default function Dashboard() {
     };
   }, []);
 
-  // 2) Helpers that DO NOT call auth again
   async function fetchWatchlist(userId) {
     const { data: rows, error } = await supabase
       .from("watchlist")
@@ -69,48 +67,44 @@ export default function Dashboard() {
   }
 
   async function revalidateSummary() {
-  setUpdating(true);
-  setErr(null); // reset
-  try {
-    // optional: skip re-fetch if cache is very fresh
-    const raw = localStorage.getItem(CACHE_KEY);
-    if (raw) {
-      const { ts } = JSON.parse(raw);
-      if (ts && Date.now() - ts < MAX_AGE_MS) {
-        setUpdating(false);
-        return;
+    setUpdating(true);
+    setErr(null);
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (raw) {
+        const { ts } = JSON.parse(raw);
+        if (ts && Date.now() - ts < MAX_AGE_MS) {
+          setUpdating(false);
+          return;
+        }
       }
+
+      const { data, error } = await supabase.rpc("get_home_summary");
+      if (error) throw error;
+
+      const row = data?.[0] ?? null;
+      setSummary(row);
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: row }));
+    } catch (e) {
+      console.error("get_home_summary error:", e);
+      setErr(e);
+    } finally {
+      setUpdating(false);
     }
-
-    const { data, error } = await supabase.rpc("get_home_summary");
-    if (error) throw error;
-
-    const row = data?.[0] ?? null;
-    setSummary(row);
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: row }));
-  } catch (e) {
-    console.error("get_home_summary error:", e); // check Console for details
-    setErr(e);
-  } finally {
-    setUpdating(false);
   }
-}
 
-
-  // 3) Run data loads exactly once per signed-in user
   const initializedForUser = useRef(null);
   useEffect(() => {
     const userId = session?.user?.id;
     if (!userId) return;
 
-    if (initializedForUser.current === userId) return; // prevent loops + StrictMode double-run
+    if (initializedForUser.current === userId) return;
     initializedForUser.current = userId;
 
     fetchWatchlist(userId);
     revalidateSummary();
   }, [session?.user?.id]);
 
-  // Watchlist UI helpers
   const add = async () => {
     const s = input.toUpperCase().trim();
     if (!s || symbols.includes(s) || !session?.user?.id) return;
@@ -141,26 +135,89 @@ export default function Dashboard() {
     setSuggestions([]);
   };
 
-  // If your usePositions2/LiveStockCard poll the backend, make sure they DON'T call auth on every tick.
-  // Prefer passing userId down if needed:
   const userId = session?.user?.id ?? null;
   const { data: trades, loading, error, refresh } = usePositions2(userId);
 
   return (
-    <main className="p-6">
-      <div style={{ maxWidth: 1200, margin: "24px auto", padding: 16 }}>
-        <h1 className="text-2xl font-semibold mb-4">Dashboard</h1>
-        {err && (
-  <div className="mt-2 text-sm text-red-600">
-    Error: {String(err?.message || err?.error_description || err?.hint || 'Unknown')}
-  </div>
-)}
+    <main className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">Dashboard</h1>
+          
+          {err && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
+              Error: {String(err?.message || err?.error_description || err?.hint || 'Unknown')}
+            </div>
+          )}
 
-        <div className="flex justify-left gap-4">
-          <AddNew onClick={() => setOpen(true)} />
-          <AddNewWatchlist onClick={() => setWatchlistOpen(true)} />
+          {/* Action Buttons */}
+          <div className="flex gap-3">
+            <AddNew onClick={() => setOpen(true)} />
+            <AddNewWatchlist onClick={() => setWatchlistOpen(true)} />
+          </div>
         </div>
 
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <TotalAsset summary={summary} updating={updating} err={err} />
+          <TotalCash summary={summary} updating={updating} err={err} />
+          <TotalProgress summary={summary} updating={updating} err={err} />
+        </div>
+
+        {/* Active Trades Section */}
+        <div className="mb-6">
+          <ActiveTradesCard trades={trades} onClosed={refresh} />
+        </div>
+
+        {/* Watch List Section */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Watch List</h2>
+
+          <div className="relative mb-6">
+            <div className="flex gap-3">
+              <div className="relative flex-1">
+                <input
+                  value={input}
+                  onChange={handleChange}
+                  onKeyDown={(e) => e.key === "Enter" && add()}
+                  placeholder="Add symbol e.g. NVDA"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                
+                {suggestions.length > 0 && (
+                  <ul className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-60 overflow-auto">
+                    {suggestions.map((s) => (
+                      <li
+                        key={s}
+                        onClick={() => handleSelect(s)}
+                        onMouseDown={(e) => e.preventDefault()}
+                        className="px-4 py-2.5 cursor-pointer hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                      >
+                        {s}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              
+              <button
+                onClick={add}
+                className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 active:scale-95 transition-all"
+              >
+                Add
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+            {symbols.map((s) => (
+              <LiveStockCard key={s} symbol={s} onDelete={handleDeleteFromUI} userId={userId} />
+            ))}
+          </div>
+        </div>
+
+        {/* Modals */}
         <AddAssetModal
           open={open}
           onClose={() => setOpen(false)}
@@ -176,59 +233,6 @@ export default function Dashboard() {
           symbols={["BTCUSDT", "ETHUSDT", "SOLUSDT"]}
           navigate={navigate}
         />
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <TotalAsset summary={summary} updating={updating} err={err} />
-          <TotalCash summary={summary} updating={updating} err={err} />
-          <TotalProgress summary={summary} updating={updating} err={err} />
-        </div>
-
-        <div className="mt-6">
-          <ActiveTradesCard trades={trades} onClosed={refresh} />
-        </div>
-      </div>
-
-      <div style={{ maxWidth: 1200, margin: "24px auto", padding: 16 }}>
-        <h1 className="text-2xl font-semibold mb-4">Watch List</h1>
-
-        <div style={{ position: "relative", display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-            <input
-              value={input}
-              onChange={handleChange}
-              onKeyDown={(e) => e.key === "Enter" && add(input)}
-              placeholder="Add symbol e.g. NVDA"
-              style={{ width: "100%", padding: "10px 12px" }}
-            />
-            <button
-              onClick={() => add(input)}
-              className="ml-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 active:scale-95 transition font-medium"
-            >
-              Add
-            </button>
-
-            {suggestions.length > 0 && (
-              <ul className="absolute top-[50px] bg-[#90a2b7ff] border border-[#1e232b] rounded-lg list-none z-10 shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
-                {suggestions.map((s) => (
-                  <li
-                    key={s}
-                    onClick={() => handleSelect(s)}
-                    onMouseDown={(e) => e.preventDefault()}
-                    className="px-3 py-2.5 cursor-pointer text-black border-b border-[#1e232b] hover:bg-[#7d8fa3] transition-colors"
-                  >
-                    {s}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(360px,1fr))", gap: 12 }}>
-          {symbols.map((s) => (
-            <LiveStockCard key={s} symbol={s} onDelete={handleDeleteFromUI} userId={userId} />
-          ))}
-        </div>
       </div>
     </main>
   );

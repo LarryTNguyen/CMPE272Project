@@ -1,24 +1,29 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import TrendingMarkets from '../components/TrendingMarkets';
 import NewsSection from '../components/NewsSection';
-import PositionsList from '../components/PositionsList';
-const Home = () => {
-  return (
 
-    <div style={{ maxWidth: 1200, margin: "24px auto", padding: 16 }}>
-      <main className="p-6 space-y-6">
+export default function Home() {
+  return (
+    <main className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Page Header */}
+        <header className="mb-2">
+          <h1 className="text-3xl font-bold text-gray-900">Home</h1>
+          <p className="text-gray-600">Markets at a glance & breaking news</p>
+        </header>
+
+        {/* Trending Markets — component already renders its own card */}
         <section>
-          <h1 className="text-2xl font-semibold">Trending Markets</h1>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Trending Markets</h2>
           <TrendingMarkets />
         </section>
-        <section>
-          <h1 className="text-2xl font-semibold">Latest News</h1>
+
+        {/* News — card wrapper to match Dashboard sections */}
+        <section className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Latest News</h2>
           <NewsSection />
         </section>
-
-      </main>
-    </div>
+      </div>
+    </main>
   );
-};
-
-export default Home;
+}

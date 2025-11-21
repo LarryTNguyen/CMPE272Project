@@ -20,7 +20,7 @@ const compact = (n) =>
 
 const pct = (n) => `${n > 0 ? "+" : ""}${n.toFixed(2)}%`;
 
-const Sparkline = ({ points, positive }) => {
+const Sparkline = ({ points }) => {
   const data = points.map((y, i) => ({ x: i, y }));
   return (
     <div className="h-10 w-28">
@@ -33,26 +33,25 @@ const Sparkline = ({ points, positive }) => {
   );
 };
 
-// --- Market row component ---
 export const MarketRow = ({ item, index }) => {
   const isUp = item.change24hPct > 0;
 
   return (
     <div
-      className="grid grid-cols-12 items-center gap-4 px-3 py-3 rounded-2xl hover:bg-muted/40 transition"
+      className="grid grid-cols-12 items-center gap-4 px-3 py-3 rounded-2xl hover:bg-gray-50 transition"
       role="row"
     >
       <div className="col-span-3 flex items-center gap-3" role="cell">
-        <div className="grid h-8 w-8 place-items-center rounded-full bg-muted text-sm font-semibold">
+        <div className="grid h-8 w-8 place-items-center rounded-full bg-gray-100 text-sm font-semibold text-gray-700">
           {item.base.slice(0, 2)}
         </div>
         <div className="leading-tight">
-          <div className="font-semibold">{item.base}/{item.quote}</div>
-          <div className="text-xs text-muted-foreground">#{(index ?? 0) + 1} trending</div>
+          <div className="font-semibold text-gray-900">{item.base}/{item.quote}</div>
+          <div className="text-xs text-gray-500">#{(index ?? 0) + 1} trending</div>
         </div>
       </div>
 
-      <div className="col-span-2 font-medium" role="cell">
+      <div className="col-span-2 font-medium text-gray-900" role="cell">
         {currency(item.last, "USD")}
       </div>
 
@@ -66,16 +65,16 @@ export const MarketRow = ({ item, index }) => {
         {pct(item.change24hPct)}
       </div>
 
-      <div className="col-span-2 text-muted-foreground" role="cell">
+      <div className="col-span-2 text-gray-600" role="cell">
         {currency(item.high24h, "USD")}
       </div>
 
-      <div className="col-span-2 text-muted-foreground" role="cell">
+      <div className="col-span-2 text-gray-600" role="cell">
         {compact(item.volume24h)}
       </div>
 
       <div className="col-span-1 justify-self-end" role="cell">
-        <Sparkline points={item.history} positive={isUp} />
+        <Sparkline points={item.history} />
       </div>
     </div>
   );
@@ -114,15 +113,15 @@ export default function TrendingMarkets() {
 
   useEffect(() => {
     fetchMarketData();
-    const timer = setInterval(fetchMarketData, 10000); // refresh every 10s
+    const timer = setInterval(fetchMarketData, 10000);
     return () => clearInterval(timer);
   }, []);
 
   return (
-    <Card className="w-full overflow-hidden border-border/60">
+    <Card className="w-full overflow-hidden border border-gray-200 rounded-2xl shadow-sm">
       <CardContent className="p-0">
         <div
-          className="grid grid-cols-12 gap-4 px-3 py-4 border-b bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground"
+          className="grid grid-cols-12 gap-4 px-3 py-4 border-b bg-gray-50 text-xs uppercase tracking-wider text-gray-600"
           role="rowgroup"
         >
           <div className="col-span-3">Trading Pairs</div>

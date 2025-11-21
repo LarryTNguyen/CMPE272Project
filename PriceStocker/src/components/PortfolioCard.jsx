@@ -1,70 +1,72 @@
 import React, { useState, useEffect } from "react";
 import supabase from '../services/superbase';
-import Navbar from "../components/Navbar";
 
-const PortfolioCard = (props) => {
-    const [stock, setStock] = useState(null)
-    const [calculations, setCalculations] = useState({
-        return: 0,
-        percChange: 0,
-        marketValue: 0,
+export default function PortfolioCard({ ticker, quantity, price }) {
+  const [stock, setStock] = useState(null);
+  const [calc, setCalc] = useState({ ret: 0, pct: 0, mv: 0 });
 
-    })
+  useEffect(() => {
+    let mounted = true;
 
-    useEffect(() => {
+    const fetchStock = async () => {
+      const { data } = await supabase
+        .from("stock_data")
+        .select("*")
+        .eq("ticker", ticker)
+        .single();
 
-        const fetchStock = async () => {
-            const { data, error } = await supabase
-                .from("stock_data")
-                .select("*")
-                .eq("ticker", props.ticker)
-                .single();
+      if (!mounted) return;
+      setStock(data || null);
 
-            setStock(data)
-            const purchaseValue = props.price;
-            const currentValue = data.current_price;
-            setCalculations({
-                return: (currentValue - purchaseValue) * props.quantity,
-                percChange: ((currentValue - purchaseValue) / purchaseValue) * 100,
-                marketValue: currentValue * props.quantity,
-            });
-        }
+      const purchase = Number(price) || 0;
+      const current = Number(data?.current_price) || 0;
+      const qty = Number(quantity) || 0;
 
-        fetchStock();
-    }, [props.ticker, props.price, props.quantity]);
-    return (
+      const ret = (current - purchase) * qty;
+      const pct = purchase > 0 ? ((current - purchase) / purchase) * 100 : 0;
+      const mv = current * qty;
 
-        <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition duration-200 flex justify-between items-center w-full max-w-5xl mx-auto">
+      setCalc({ ret, pct, mv });
+    };
 
-            <div className="flex flex-col gap-1">
-                <div className="text-2xl font-bold tracking-wide text-gray-800">{props.ticker}</div>
-                <div className="text-sm text-gray-500">
-                    Quantity: <span className="text-gray-700 font-medium">{props.quantity}</span>
-                </div>
-                <div className="text-sm text-gray-500">
-                    Average Price: <span className="text-gray-700 font-medium">${props.price}</span>
-                </div>
-                <div className="text-sm text-gray-500">
-                    Current Price: <span className="text-gray-700 font-medium">${stock?.current_price?.toFixed(2) ?? "—"}</span>
-                </div>
-            </div>
+    fetchStock();
+    return () => { mounted = false; };
+  }, [ticker, price, quantity]);
 
-            <div className="flex flex-col items-end gap-1">
-                <div className="text-lg font-bold text-gray-800">
-                  {stock?.name}
-                </div>
-                <div className={`text-sm font-semibold ${calculations.return >= 0 ? "text-green-600" : "text-red-600"}`}>
-                    Return: ${calculations.return.toFixed(2)}
-                </div>
-                <div className={`text-sm font-semibold ${calculations.percChange >= 0 ? "text-green-600" : "text-red-600"}`}>
-                    Change: {calculations.percChange.toFixed(2)}%
-                </div>
-                <div className="text-lg font-bold text-gray-800">
-                    Market Value: ${calculations.marketValue.toFixed(2)}
-                </div>
+  const fmt = (n) =>
+    n == null ? "—" : Number(n).toLocaleString(undefined, { maximumFractionDigits: 2 });
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition duration-200 flex justify-between items-center w-full">
+      <div className="flex flex-col gap-1">
+        <div className="text-2xl font-bold tracking-wide text-gray-900">{ticker}</div>
+        <div className="text-sm text-gray-500">
+          Quantity: <span className="text-gray-700 font-medium">{fmt(quantity)}</span>
         </div>
+        <div className="text-sm text-gray-500">
+          Average Price: <span className="text-gray-700 font-medium">${fmt(price)}</span>
         </div>
-    )
+        <div className="text-sm text-gray-500">
+          Current Price: <span className="text-gray-700 font-medium">
+            {stock?.current_price != null ? `$${fmt(stock.current_price)}` : "—"}
+          </span>
+        </div>
+      </div>
 
+      <div className="flex flex-col items-end gap-1">
+        <div className="text-lg font-bold text-gray-900">
+          {stock?.name || '\u00A0'}
+        </div>
+        <div className={`text-sm font-semibold ${calc.ret >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+          Return: ${fmt(calc.ret)}
+        </div>
+        <div className={`text-sm font-semibold ${calc.pct >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+          Change: {fmt(calc.pct)}%
+        </div>
+        <div className="text-lg font-bold text-gray-900">
+          Market Value: ${fmt(calc.mv)}
+        </div>
+      </div>
+    </div>
+  );
 }
-export default PortfolioCard
