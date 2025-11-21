@@ -1,49 +1,17 @@
-import React, { useState, useEffect } from "react";
-import supabase from '../services/superbase';
+import React from "react";
 
-const formatCash = (cash) =>
-  Number(cash).toLocaleString("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+const fmt = (n) =>
+  Number(n ?? 0).toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 });
 
-const TotalCash = () => {
-  const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState(null);
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError) throw userError;
-        if (!user) return console.log("No user logged in");
-
-        const { data: profileData, error: profileError } = await supabase
-          .from("profiles")
-          .select("cash")
-          .eq("id", user.id)
-          .single();
-
-        if (profileError) throw profileError;
-        setProfile(profileData);
-      } catch (error) {
-        console.error("Error fetching profile:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProfile();
-  }, []);
-
+export default function TotalCash({ summary, updating, err }) {
+  const val = summary?.cash ?? 0;
   return (
     <div className="h-28 aspect-square rounded-2xl border bg-background shadow-sm p-4 flex flex-col items-center justify-center text-center">
-      <div className="text-sm font-medium text-muted-foreground">Buying Power:</div>
-      <div className="mt-2 text-5xl font-bold tracking-tight text-green-600">
-        {loading ? "Loading..." : formatCash(profile?.cash ?? 0)}
+      <div className="text-sm font-medium text-muted-foreground">
+        Buying Power {updating && <span className="ml-1 text-xs">• updating</span>}
+        {err && <span className="ml-1 text-xs text-red-600">• error</span>}
       </div>
+      <div className="mt-2 text-5xl font-bold tracking-tight text-green-600">{fmt(val)}</div>
     </div>
   );
 }
-export default TotalCash

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import TotalProgress from "../components/TotalProgress";
 import TotalAsset from "../components/TotalAsset";
@@ -8,192 +8,190 @@ import AddWatchlist from "../components/AddWatchlist";
 import TotalCash from "../components/TotalCash";
 import AddAssetModal from "../components/AddAssetModal";
 import ActiveTradesCard from "../components/ActiveTradeCard";
-import MockLiveStockCard from "../components/MockLiveStockCard";
-import usePositions2 from '../hooks/usePositions2';
 import LiveStockCard from "../components/LiveStockCard";
-import tickersData from '../data/tickers.json';
-import supabase from '../services/superbase';
+import tickersData from "../data/tickers.json";
+import supabase from "../services/superbase";
+import usePositions2 from "../hooks/usePositions2";
 
-const Dashboard = () => {
+const CACHE_KEY = "home_summary_v1";
+const MAX_AGE_MS = 60_000; // 60s considered fresh
+
+export default function Dashboard() {
   const navigate = useNavigate();
-  const totalPL = 1425.78;   // absolute profit/loss since account creation
-  const totalPLPct = 12.63;  // percent since account creation
-  const [open, setOpen] = React.useState(false);
-  const [watchlistOpen, setWatchlistOpen] = React.useState(false);
+
+  const [session, setSession] = useState(null);
+  const [summary, setSummary] = useState(() => {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (!raw) return null;
+      const cached = JSON.parse(raw);
+      return cached?.data ?? null; // show instantly
+    } catch {
+      return null;
+    }
+  });
+  const [updating, setUpdating] = useState(false);
+  const [err, setErr] = useState(null);
+
+  const [open, setOpen] = useState(false);
+  const [watchlistOpen, setWatchlistOpen] = useState(false);
   const [symbols, setSymbols] = useState(["AAPL", "MSFT", "TSLA"]);
   const [input, setInput] = useState("");
-  const [user, setUser] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
+  const TICKERS = tickersData.map((item) => item.ticker);
 
-  const TICKERS = tickersData.map(item => item.ticker);
+  // 1) Get session once + subscribe (no polling, no retries)
+  useEffect(() => {
+    let mounted = true;
 
-  useEffect(() => { //USED TO HANDLE GETTING AUTHORIZATION/USER
-    const fetchUser = async () => {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error) console.error("Auth error:", error);
-      else if (user) setUser(user);
+    supabase.auth.getSession().then(({ data }) => {
+      if (mounted) setSession(data.session ?? null);
+    });
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_evt, s) => {
+      if (mounted) setSession(s ?? null);
+    });
+
+    return () => {
+      mounted = false;
+      sub?.subscription.unsubscribe();
     };
-    fetchUser();
   }, []);
 
-  const handleDeleteFromUI = (ticker) => { //HANDLES THE RERENDER WHEN DELETE FROM COMPONENT
-    setSymbols((prev) => prev.filter((s) => s !== ticker));
-  };
+  // 2) Helpers that DO NOT call auth again
+  async function fetchWatchlist(userId) {
+    const { data: rows, error } = await supabase
+      .from("watchlist")
+      .select("ticker")
+      .eq("user_id", userId);
 
-  const add = async () => { //HANDLE ADDING TO WATCH LIST FROM TEXT BOX
+    if (!error && rows) setSymbols(rows.map((r) => r.ticker));
+  }
+
+  async function revalidateSummary() {
+  setUpdating(true);
+  setErr(null); // reset
+  try {
+    // optional: skip re-fetch if cache is very fresh
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (raw) {
+      const { ts } = JSON.parse(raw);
+      if (ts && Date.now() - ts < MAX_AGE_MS) {
+        setUpdating(false);
+        return;
+      }
+    }
+
+    const { data, error } = await supabase.rpc("get_home_summary");
+    if (error) throw error;
+
+    const row = data?.[0] ?? null;
+    setSummary(row);
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: row }));
+  } catch (e) {
+    console.error("get_home_summary error:", e); // check Console for details
+    setErr(e);
+  } finally {
+    setUpdating(false);
+  }
+}
+
+
+  // 3) Run data loads exactly once per signed-in user
+  const initializedForUser = useRef(null);
+  useEffect(() => {
+    const userId = session?.user?.id;
+    if (!userId) return;
+
+    if (initializedForUser.current === userId) return; // prevent loops + StrictMode double-run
+    initializedForUser.current = userId;
+
+    fetchWatchlist(userId);
+    revalidateSummary();
+  }, [session?.user?.id]);
+
+  // Watchlist UI helpers
+  const add = async () => {
     const s = input.toUpperCase().trim();
-    if (!s || symbols.includes(s)) return;
-    const { data, error } = await supabase
-      .from('watchlist')
-      .insert([
-        {
-          ticker: s,
-          watch_price: 0,
-          user_id: user.id
-        }
-      ])
-      .select();;
-    if (error) {
-      console.error('watchlist Error: ', error);
-    } else {
-      console.log('successful', data);
+    if (!s || symbols.includes(s) || !session?.user?.id) return;
+
+    const { error } = await supabase.from("watchlist").insert([
+      { ticker: s, watch_price: 0, user_id: session.user.id }
+    ]);
+    if (!error) {
       setSymbols((prev) => [...prev, s]);
       setInput("");
+    } else {
+      console.error("watchlist insert error:", error);
     }
   };
-  const { data: trades, loading, error, refresh } = usePositions2();
-  const handleSubmit = (payload) => {
-    // Save order to your backend / local state
-    console.log("Add asset payload:", payload);
-  };
 
+  const handleDeleteFromUI = (ticker) => {
+    setSymbols((prev) => prev.filter((x) => x !== ticker));
+  };
 
   const handleChange = (e) => {
     const value = e.target.value.toUpperCase();
     setInput(value);
-
-    if (value.length > 0) {
-      const filtered = TICKERS.filter((t) => t.startsWith(value)).slice(0, 6);
-
-      setSuggestions(filtered);
-    } else {
-      setSuggestions([]);
-    }
+    setSuggestions(value ? TICKERS.filter((t) => t.startsWith(value)).slice(0, 6) : []);
   };
-
 
   const handleSelect = (symbol) => {
     setInput(symbol);
-    setSuggestions([]); 
+    setSuggestions([]);
   };
 
-  const fetchWatchlist = async () => {
-    try {
-      const { data: session, error } = await supabase.auth.getUser();
-      if (error) {
-        console.error("Auth error while fetching watchlist:", error);
-        return;
-      }
-
-      const currentUser = session?.user;
-      if (!currentUser) {
-        console.warn("User not ready — retrying fetchWatchlist in 300ms...");
-        setTimeout(fetchWatchlist, 300); // retry until user loads
-        return;
-      }
-
-      const { data: rows, error: wlError } = await supabase
-        .from("watchlist")
-        .select("ticker")
-        .eq("user_id", currentUser.id);
-
-      if (wlError) {
-        console.error("Database error fetching watchlist:", wlError);
-        return;
-      }
-
-      setSymbols(rows.map((row) => row.ticker));
-    } catch (err) {
-      console.error("Unexpected fetchWatchlist error:", err);
-    }
-  };
-
-  const handleWatchlistAdded = async () => {
-    const { data: session } = await supabase.auth.getUser();
-    const currentUser = session?.user;
-
-    if (!currentUser) {
-      console.warn("User not ready — retrying handleWatchlistAdded...");
-      setTimeout(handleWatchlistAdded, 300);
-      return;
-    }
-
-    fetchWatchlist();
-  };
-  useEffect(() => {
-    const load = async () => {
-      const { data } = await supabase.auth.getUser();
-      const authUser = data?.user;
-
-      if (!authUser) {
-        console.warn("User not ready — retrying Dashboard preload");
-        setTimeout(load, 300);
-        return;
-      }
-
-      setUser(authUser);
-      fetchWatchlist();
-    };
-
-    load();
-  }, []);
+  // If your usePositions2/LiveStockCard poll the backend, make sure they DON'T call auth on every tick.
+  // Prefer passing userId down if needed:
+  const userId = session?.user?.id ?? null;
+  const { data: trades, loading, error, refresh } = usePositions2(userId);
 
   return (
     <main className="p-6">
       <div style={{ maxWidth: 1200, margin: "24px auto", padding: 16 }}>
+        <h1 className="text-2xl font-semibold mb-4">Dashboard</h1>
+        {err && (
+  <div className="mt-2 text-sm text-red-600">
+    Error: {String(err?.message || err?.error_description || err?.hint || 'Unknown')}
+  </div>
+)}
 
-      <h1 className="text-2xl font-semibold mb-4">Dashboard</h1>
-      <div className="flex justify-left gap-4">
-        <AddNew onClick={() => setOpen(true)} />
-        <AddNewWatchlist onClick={() => setWatchlistOpen(true)} />
+        <div className="flex justify-left gap-4">
+          <AddNew onClick={() => setOpen(true)} />
+          <AddNewWatchlist onClick={() => setWatchlistOpen(true)} />
+        </div>
+
+        <AddAssetModal
+          open={open}
+          onClose={() => setOpen(false)}
+          onSubmit={() => {}}
+          symbols={["BTCUSDT", "ETHUSDT", "SOLUSDT"]}
+          navigate={navigate}
+        />
+
+        <AddWatchlist
+          open={watchlistOpen}
+          onClose={() => setWatchlistOpen(false)}
+          onSubmit={() => fetchWatchlist(userId)}
+          symbols={["BTCUSDT", "ETHUSDT", "SOLUSDT"]}
+          navigate={navigate}
+        />
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <TotalAsset summary={summary} updating={updating} err={err} />
+          <TotalCash summary={summary} updating={updating} err={err} />
+          <TotalProgress summary={summary} updating={updating} err={err} />
+        </div>
+
+        <div className="mt-6">
+          <ActiveTradesCard trades={trades} onClosed={refresh} />
+        </div>
       </div>
 
-
-      <AddAssetModal
-        open={open}
-        onClose={() => setOpen(false)}
-        onSubmit={handleSubmit}
-        symbols={["BTCUSDT", "ETHUSDT", "SOLUSDT"]}
-        navigate={navigate}
-      />
-
-      <AddWatchlist
-        open={watchlistOpen}
-        onClose={() => setWatchlistOpen(false)}
-        onSubmit={handleWatchlistAdded}
-        symbols={["BTCUSDT", "ETHUSDT", "SOLUSDT"]}
-        navigate={navigate}
-      />
-
-
-      <div className="mt-6 flex gap-4">
-        <TotalAsset amount={-25000} currency="USD" />
-        <TotalCash />
-        <TotalProgress amount={totalPL} percent={totalPLPct} currency="USD" />
-      </div>
-      <div className="mt-6">
-        <ActiveTradesCard trades={trades} onClosed={refresh}/>
-      </div>
-</div>
       <div style={{ maxWidth: 1200, margin: "24px auto", padding: 16 }}>
-      <h1 className="text-2xl font-semibold mb-4">Watch List</h1>
-        <div
-          style={{
-            position: "relative",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
+        <h1 className="text-2xl font-semibold mb-4">Watch List</h1>
+
+        <div style={{ position: "relative", display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
             <input
               value={input}
@@ -208,6 +206,7 @@ const Dashboard = () => {
             >
               Add
             </button>
+
             {suggestions.length > 0 && (
               <ul className="absolute top-[50px] bg-[#90a2b7ff] border border-[#1e232b] rounded-lg list-none z-10 shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
                 {suggestions.map((s) => (
@@ -222,21 +221,15 @@ const Dashboard = () => {
                 ))}
               </ul>
             )}
-
-
-
-
-
           </div>
         </div>
+
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(360px,1fr))", gap: 12 }}>
           {symbols.map((s) => (
-            <LiveStockCard key={s} symbol={s} onDelete={handleDeleteFromUI} />
+            <LiveStockCard key={s} symbol={s} onDelete={handleDeleteFromUI} userId={userId} />
           ))}
         </div>
       </div>
     </main>
   );
-};
-
-export default Dashboard;
+}
