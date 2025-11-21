@@ -4,7 +4,7 @@ const Modal = ({ open, onClose, children }) => {
     // backdrop
     <div
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-white/80"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-white/95"
     >
       {/* Modal */}
       <div onClick={(e) => e.stopPropagation()}>
