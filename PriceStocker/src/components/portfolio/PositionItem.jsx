@@ -48,7 +48,8 @@ const PositionItem = ({
         <div>
           <button
             onClick={() => setIsOpen(true)}
-              className="ml-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 active:scale-95 transition font-medium"          >
+            className="ml-2 rounded-md bg-blue-500 px-4 py-2 font-medium text-white transition hover:bg-blue-600 active:scale-95"
+          >
             Sell
           </button>
         </div>
@@ -65,4 +66,3 @@ const PositionItem = ({
 };
 
 export default PositionItem;
-

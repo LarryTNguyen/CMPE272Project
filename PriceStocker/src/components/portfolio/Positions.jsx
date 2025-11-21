@@ -1,8 +1,12 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import useGetPositions from '../../hooks/portfolio/useGetPositions';
+import { createPortal } from 'react-dom';
+import Modal from '../Modal';
+import SellForm from './SellForm';
 
 export default function Positions({ onSell }) {
   const { positions, isFetching } = useGetPositions();
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     if (!isFetching && positions) console.log(positions);
@@ -21,22 +25,32 @@ export default function Positions({ onSell }) {
   const num = (n, max = 4) =>
     n == null || Number.isNaN(Number(n))
       ? '—'
-      : new Intl.NumberFormat(undefined, { maximumFractionDigits: max }).format(Number(n));
+      : new Intl.NumberFormat(undefined, { maximumFractionDigits: max }).format(
+          Number(n),
+        );
 
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[960px] table-auto text-sm">
-        <thead className="bg-gray-50 text-gray-600 uppercase tracking-wide text-xs">
+        <thead className="bg-gray-50 text-xs tracking-wide text-gray-600 uppercase">
           <tr className="border-b border-gray-200">
-            <th className="text-left py-3 px-4 font-semibold">Ticker</th>
-            <th className="text-right py-3 px-4 font-semibold">Quantity</th>
-            <th className="text-right py-3 px-4 font-semibold">Average Price</th>
-            <th className="text-right py-3 px-4 font-semibold">Current Price</th>
-            <th className="text-right py-3 px-4 font-semibold">Total Cost</th>
-            <th className="text-right py-3 px-4 font-semibold">Total Value</th>
-            <th className="text-right py-3 px-4 font-semibold">Dollar Change</th>
-            <th className="text-right py-3 px-4 font-semibold">Percent Change</th>
-            <th className="text-right py-3 px-4 font-semibold">Action</th>
+            <th className="px-4 py-3 text-left font-semibold">Ticker</th>
+            <th className="px-4 py-3 text-right font-semibold">Quantity</th>
+            <th className="px-4 py-3 text-right font-semibold">
+              Average Price
+            </th>
+            <th className="px-4 py-3 text-right font-semibold">
+              Current Price
+            </th>
+            <th className="px-4 py-3 text-right font-semibold">Total Cost</th>
+            <th className="px-4 py-3 text-right font-semibold">Total Value</th>
+            <th className="px-4 py-3 text-right font-semibold">
+              Dollar Change
+            </th>
+            <th className="px-4 py-3 text-right font-semibold">
+              Percent Change
+            </th>
+            <th className="px-4 py-3 text-right font-semibold">Action</th>
           </tr>
         </thead>
 
@@ -54,28 +68,38 @@ export default function Positions({ onSell }) {
                 p.percent_change != null
                   ? Number(p.percent_change)
                   : avg > 0
-                  ? ((cur - avg) / avg) * 100
-                  : 0;
+                    ? ((cur - avg) / avg) * 100
+                    : 0;
 
               return (
                 <tr key={p.id ?? `${p.ticker}-${i}`}>
-                  <td className="px-4 py-3 font-semibold text-gray-900 whitespace-nowrap">
+                  <td className="px-4 py-3 font-semibold whitespace-nowrap text-gray-900">
                     {p.ticker}
                   </td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap">{num(qty)}</td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap">{money(avg)}</td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap">{money(cur)}</td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap">{money(totalCost)}</td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap">{money(totalValue)}</td>
+                  <td className="px-4 py-3 text-right whitespace-nowrap">
+                    {num(qty)}
+                  </td>
+                  <td className="px-4 py-3 text-right whitespace-nowrap">
+                    {money(avg)}
+                  </td>
+                  <td className="px-4 py-3 text-right whitespace-nowrap">
+                    {money(cur)}
+                  </td>
+                  <td className="px-4 py-3 text-right whitespace-nowrap">
+                    {money(totalCost)}
+                  </td>
+                  <td className="px-4 py-3 text-right whitespace-nowrap">
+                    {money(totalValue)}
+                  </td>
                   <td
-                    className={`px-4 py-3 text-right whitespace-nowrap font-semibold ${
+                    className={`px-4 py-3 text-right font-semibold whitespace-nowrap ${
                       diff >= 0 ? 'text-emerald-600' : 'text-red-600'
                     }`}
                   >
                     {money(diff)}
                   </td>
                   <td
-                    className={`px-4 py-3 text-right whitespace-nowrap font-semibold ${
+                    className={`px-4 py-3 text-right font-semibold whitespace-nowrap ${
                       pct >= 0 ? 'text-emerald-600' : 'text-red-600'
                     }`}
                   >
@@ -83,8 +107,11 @@ export default function Positions({ onSell }) {
                   </td>
                   <td className="px-4 py-3 text-right whitespace-nowrap">
                     <button
-                      className="px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 active:scale-95 transition"
-                      onClick={() => (onSell ? onSell(p) : console.log('Sell', p))}
+                      className="rounded-lg bg-blue-600 px-3 py-1.5 text-white transition hover:bg-blue-700 active:scale-95"
+                      onClick={() =>
+                        // onSell ? onSell(p) : console.log('Sell', p)
+                        setIsOpen(true)
+                      }
                     >
                       Sell
                     </button>
@@ -94,13 +121,22 @@ export default function Positions({ onSell }) {
             })
           ) : (
             <tr>
-              <td colSpan={9} className="text-center py-8 text-gray-500">
-                {isFetching ? 'Loading positions…' : 'No positions yet. Buy stock to get started.'}
+              <td colSpan={9} className="py-8 text-center text-gray-500">
+                {isFetching
+                  ? 'Loading positions…'
+                  : 'No positions yet. Buy stock to get started.'}
               </td>
             </tr>
           )}
         </tbody>
       </table>
+      {isOpen &&
+        createPortal(
+          <Modal open={isOpen} onClose={() => setIsOpen(false)}>
+            <SellForm onClose={() => setIsOpen(false)} />
+          </Modal>,
+          document.body,
+        )}
     </div>
   );
 }
